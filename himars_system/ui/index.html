@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>MLRS Console</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div id="panel" class="hidden">
+    <div class="hdr">FIELD ARTILLERY TERMINAL v1.9</div>
+    <div class="line">SYSTEM: <span class="ok">ONLINE</span></div>
+    <div class="line">TARGET: <span id="target">WAYPOINT</span></div>
+
+    <label>ROCKET COUNT</label>
+    <input id="rockets" type="number" min="1" max="24" value="6" />
+
+    <label>SPREAD (m)</label>
+    <input id="spread" type="number" min="1" max="120" value="35" />
+
+    <label>INTERVAL (ms)</label>
+    <input id="delay" type="number" min="150" max="2000" value="500" />
+
+    <div class="buttons">
+      <button id="fire">FIRE AT WAYPOINT</button>
+      <button id="close">CLOSE</button>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
