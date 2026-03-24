@@ -99,7 +99,11 @@ RegisterNUICallback('launch', function(data, cb)
     missiles = math.max(Config.MinMissiles, math.min(Config.MaxMissiles, missiles))
 
     TriggerServerEvent('mos2_missile:server:requestLaunch', {
-        target = target,
+        target = {
+            x = target.x + 0.0,
+            y = target.y + 0.0,
+            z = target.z + 0.0
+        },
         missiles = missiles
     })
 

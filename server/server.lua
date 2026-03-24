@@ -28,12 +28,45 @@ local function hasLaunchCard(player)
     return item ~= nil
 end
 
+local function normalizeTarget(rawTarget)
+    if rawTarget == nil then
+        return nil
+    end
+
+    -- Handles table payloads from NUI/client events
+    if type(rawTarget) == 'table' then
+        local x = tonumber(rawTarget.x or rawTarget[1])
+        local y = tonumber(rawTarget.y or rawTarget[2])
+        local z = tonumber(rawTarget.z or rawTarget[3])
+
+        if x and y and z then
+            return { x = x, y = y, z = z }
+        end
+    end
+
+    -- Handles vector3 userdata cases
+    local okX, x = pcall(function() return tonumber(rawTarget.x) end)
+    local okY, y = pcall(function() return tonumber(rawTarget.y) end)
+    local okZ, z = pcall(function() return tonumber(rawTarget.z) end)
+    if okX and okY and okZ and x and y and z then
+        return { x = x, y = y, z = z }
+    end
+
+    return nil
+end
+
 RegisterNetEvent('mos2_missile:server:requestLaunch', function(payload)
     local src = source
     local player = QBCore.Functions.GetPlayer(src)
     if not player then return end
 
-    if type(payload) ~= 'table' or type(payload.target) ~= 'table' then
+    if type(payload) ~= 'table' then
+        TriggerClientEvent('QBCore:Notify', src, 'بيانات إطلاق غير صالحة.', 'error')
+        return
+    end
+
+    local target = normalizeTarget(payload.target)
+    if not target then
         TriggerClientEvent('QBCore:Notify', src, 'بيانات إطلاق غير صالحة.', 'error')
         return
     end
@@ -63,11 +96,7 @@ RegisterNetEvent('mos2_missile:server:requestLaunch', function(payload)
 
     TriggerClientEvent('mos2_missile:client:launchApproved', src, {
         missiles = missiles,
-        target = {
-            x = tonumber(payload.target.x) or 0.0,
-            y = tonumber(payload.target.y) or 0.0,
-            z = tonumber(payload.target.z) or 0.0
-        },
+        target = target,
         spread = Config.SpreadRadius,
         delay = Config.MissileDelay
     })
@@ -76,9 +105,9 @@ RegisterNetEvent('mos2_missile:server:requestLaunch', function(payload)
     print(('[mos2_missile] %s launched %d missiles at %.2f %.2f %.2f'):format(
         citizenId,
         missiles,
-        tonumber(payload.target.x) or 0.0,
-        tonumber(payload.target.y) or 0.0,
-        tonumber(payload.target.z) or 0.0
+        target.x,
+        target.y,
+        target.z
     ))
 end)
 
