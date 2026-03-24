@@ -1,0 +1,277 @@
+local QBCore = exports['qb-core']:GetCoreObject()
+
+local uiOpen = false
+local selectedTarget = nil
+local currentCooldown = 0
+
+local function notify(msg, ntype)
+    QBCore.Functions.Notify(msg, ntype or 'primary')
+end
+
+local function isInLaunchTruck()
+    local ped = PlayerPedId()
+    if not IsPedInAnyVehicle(ped, false) then
+        return false, nil
+    end
+
+    local vehicle = GetVehiclePedIsIn(ped, false)
+    if GetEntityModel(vehicle) ~= Config.TruckModel then
+        return false, nil
+    end
+
+    if Config.RequireDriverSeat and GetPedInVehicleSeat(vehicle, -1) ~= ped then
+        return false, vehicle
+    end
+
+    return true, vehicle
+end
+
+local function resolveImpactZ(x, y)
+    local found, groundZ
+    for height = 1000.0, 0.0, -25.0 do
+        found, groundZ = GetGroundZFor_3dCoord(x + 0.0, y + 0.0, height, false)
+        if found then
+            return groundZ + 0.8
+        end
+    end
+
+    local waterFound, waterZ = GetWaterHeight(x + 0.0, y + 0.0, 1000.0)
+    if waterFound then
+        return waterZ
+    end
+
+    return 35.0
+end
+
+local function tryLoadMissileModel(hash, timeoutMs)
+    if not IsModelInCdimage(hash) then
+        return false
+    end
+
+    RequestModel(hash)
+    local start = GetGameTimer()
+    while not HasModelLoaded(hash) do
+        if GetGameTimer() - start > timeoutMs then
+            return false
+        end
+        Wait(0)
+    end
+
+    return true
+end
+
+local function setNui(state)
+    uiOpen = state
+    SetNuiFocus(state, state)
+    SendNUIMessage({
+        action = state and 'open' or 'close',
+        cooldown = currentCooldown,
+        defaultMissiles = Config.DefaultMissileCount,
+        minMissiles = Config.MinMissiles,
+        maxMissiles = Config.MaxMissiles,
+        hasTarget = selectedTarget ~= nil
+    })
+end
+
+RegisterNetEvent('mos2_missile:client:notify', function(msg, ntype)
+    notify(msg, ntype)
+end)
+
+local function chooseTargetFromWaypoint()
+    local waypointBlip = GetFirstBlipInfoId(8)
+    if not DoesBlipExist(waypointBlip) then
+        notify('حدد Waypoint على الخريطة أولاً.', 'error')
+        return nil
+    end
+
+    local coord = GetBlipInfoIdCoord(waypointBlip)
+    local impactZ = resolveImpactZ(coord.x, coord.y)
+    coord = vector3(coord.x + 0.0, coord.y + 0.0, impactZ)
+    local ok, vehicle = isInLaunchTruck()
+    if not ok then
+        notify('يجب أن تكون داخل شاحنة الإطلاق.', 'error')
+        return nil
+    end
+
+    local vCoord = GetEntityCoords(vehicle)
+    local dist = #(coord - vCoord)
+
+    if dist > Config.MaxLaunchRange then
+        notify(('الهدف بعيد جداً. الحد الأقصى %.0f متر.'):format(Config.MaxLaunchRange), 'error')
+        return nil
+    end
+
+    selectedTarget = coord
+    notify(('تم تثبيت الهدف على مسافة %.0f متر.'):format(dist), 'success')
+
+    SendNUIMessage({
+        action = 'targetSelected',
+        hasTarget = true,
+        x = coord.x,
+        y = coord.y,
+        z = coord.z,
+        distance = math.floor(dist)
+    })
+
+    return coord
+end
+
+RegisterNUICallback('close', function(_, cb)
+    setNui(false)
+    cb(true)
+end)
+
+RegisterNUICallback('pickTarget', function(_, cb)
+    chooseTargetFromWaypoint()
+    cb(true)
+end)
+
+RegisterNUICallback('uiNotify', function(data, cb)
+    if data and data.message then
+        notify(data.message, data.type or 'error')
+    end
+    cb(true)
+end)
+
+RegisterNUICallback('launch', function(data, cb)
+    local missiles = tonumber(data.missiles) or Config.DefaultMissileCount
+    local target = selectedTarget
+
+    if not target then
+        notify('حدد الهدف أولاً.', 'error')
+        cb(false)
+        return
+    end
+
+    missiles = math.max(Config.MinMissiles, math.min(Config.MaxMissiles, missiles))
+
+    TriggerServerEvent('mos2_missile:server:requestLaunch', {
+        target = {
+            x = target.x + 0.0,
+            y = target.y + 0.0,
+            z = target.z + 0.0
+        },
+        missiles = missiles
+    })
+
+    cb(true)
+end)
+
+RegisterNetEvent('mos2_missile:client:launchApproved', function(payload)
+    local ped = PlayerPedId()
+    local vehicle = GetVehiclePedIsIn(ped, false)
+    if vehicle == 0 then
+        return
+    end
+
+    TriggerServerEvent('mos2_missile:server:launchStarted')
+
+    local startPos = GetOffsetFromEntityInWorldCoords(vehicle, -1.2, -4.8, 2.3)
+    local missileHash = Config.MissileModel
+    local hasMissileModel = tryLoadMissileModel(missileHash, 2500)
+
+    if not hasMissileModel then
+        notify('موديل الصاروخ غير صالح/لم يتم تحميله، سيتم تنفيذ قصف مباشر.', 'error')
+        print('[mos2_missile] Missile model failed to load; using direct explosion fallback.')
+    end
+
+    for i = 1, payload.missiles do
+        local impact = vector3(
+            payload.target.x + (math.random() * 2.0 - 1.0) * payload.spread,
+            payload.target.y + (math.random() * 2.0 - 1.0) * payload.spread,
+            payload.target.z
+        )
+
+        local rocket = 0
+        local timeMs = 1200 + i * 80
+
+        if hasMissileModel then
+            local projPos = vector3(startPos.x, startPos.y, startPos.z + (i * 0.15))
+            rocket = CreateObjectNoOffset(missileHash, projPos.x, projPos.y, projPos.z, true, true, false)
+
+            if rocket ~= 0 and DoesEntityExist(rocket) then
+                local dir = impact - projPos
+                local vel = dir / (timeMs / 1000.0)
+                SetEntityVelocity(rocket, vel.x, vel.y, vel.z)
+            else
+                rocket = 0
+            end
+
+            PlaySoundFromCoord(-1, Config.LaunchSound, projPos.x, projPos.y, projPos.z, Config.LaunchSoundSet, true, 0, false)
+        else
+            PlaySoundFrontend(-1, 'ERROR', 'HUD_AMMO_SHOP_SOUNDSET', true)
+        end
+
+        if Config.ScreenShake then
+            ShakeGameplayCam('LARGE_EXPLOSION_SHAKE', Config.ScreenShakeStrength)
+        end
+
+        CreateThread(function()
+            Wait(timeMs)
+            if rocket ~= 0 and DoesEntityExist(rocket) then
+                local pos = GetEntityCoords(rocket)
+                AddExplosion(pos.x, pos.y, pos.z, 29, 20.0, true, false, 1.0)
+                DeleteEntity(rocket)
+            else
+                AddExplosion(impact.x, impact.y, impact.z, 29, 20.0, true, false, 1.0)
+            end
+        end)
+
+        Wait(payload.delay)
+    end
+
+    if hasMissileModel then
+        SetModelAsNoLongerNeeded(missileHash)
+    end
+
+    if Config.ScreenShake then
+        Wait(Config.ScreenShakeDurationMs)
+        StopGameplayCamShaking(true)
+    end
+
+    selectedTarget = nil
+    SendNUIMessage({ action = 'clearTarget' })
+    notify('تم إطلاق الرشقة الصاروخية بنجاح.', 'success')
+end)
+
+RegisterNetEvent('mos2_missile:client:setCooldown', function(seconds)
+    currentCooldown = seconds
+    SendNUIMessage({ action = 'cooldown', cooldown = seconds })
+end)
+
+CreateThread(function()
+    while true do
+        Wait(1000)
+        if currentCooldown > 0 then
+            currentCooldown = currentCooldown - 1
+            if currentCooldown < 0 then currentCooldown = 0 end
+        end
+    end
+end)
+
+CreateThread(function()
+    while true do
+        Wait(0)
+        local inTruck = isInLaunchTruck()
+        if inTruck then
+            local key = 0
+            if Config.OpenUiKey == 'F6' then key = 167 end
+            if Config.OpenUiKey == 'F7' then key = 168 end
+            if Config.OpenUiKey == 'F5' then key = 166 end
+
+            if key ~= 0 and IsControlJustReleased(0, key) then
+                setNui(not uiOpen)
+            end
+
+            if not uiOpen then
+                BeginTextCommandDisplayHelp('STRING')
+                AddTextComponentSubstringPlayerName(('~INPUT_SELECT_CHARACTER_FRANKLIN~ نظام HIMARS - افتح اللوحة (%s)'):format(Config.OpenUiKey))
+                EndTextCommandDisplayHelp(0, false, false, -1)
+            end
+        elseif uiOpen then
+            setNui(false)
+        else
+            Wait(500)
+        end
+    end
+end)
