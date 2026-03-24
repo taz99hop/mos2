@@ -1,6 +1,6 @@
 local QBCore = exports['qb-core']:GetCoreObject()
 local cooldowns = {}
-
+local pendingLaunch = {}
 
 local function notify(src, msg, ntype)
     TriggerClientEvent('mos2_missile:client:notify', src, msg, ntype or 'primary')
@@ -38,7 +38,6 @@ local function normalizeTarget(rawTarget)
         return nil
     end
 
-    -- Handles table payloads from NUI/client events
     if type(rawTarget) == 'table' then
         local x = tonumber(rawTarget.x or rawTarget[1])
         local y = tonumber(rawTarget.y or rawTarget[2])
@@ -49,7 +48,6 @@ local function normalizeTarget(rawTarget)
         end
     end
 
-    -- Handles vector3 userdata cases
     local okX, x = pcall(function() return tonumber(rawTarget.x) end)
     local okY, y = pcall(function() return tonumber(rawTarget.y) end)
     local okZ, z = pcall(function() return tonumber(rawTarget.z) end)
@@ -96,8 +94,11 @@ RegisterNetEvent('mos2_missile:server:requestLaunch', function(payload)
     local missiles = tonumber(payload.missiles) or Config.DefaultMissileCount
     missiles = math.max(Config.MinMissiles, math.min(Config.MaxMissiles, missiles))
 
-    cooldowns[src] = now + Config.CooldownSeconds
-    TriggerClientEvent('mos2_missile:client:setCooldown', src, Config.CooldownSeconds)
+    pendingLaunch[src] = {
+        expires = GetGameTimer() + 7000,
+        missiles = missiles,
+        target = target
+    }
 
     TriggerClientEvent('mos2_missile:client:launchApproved', src, {
         missiles = missiles,
@@ -107,7 +108,7 @@ RegisterNetEvent('mos2_missile:server:requestLaunch', function(payload)
     })
 
     local citizenId = player.PlayerData.citizenid or 'unknown'
-    print(('[mos2_missile] %s launched %d missiles at %.2f %.2f %.2f'):format(
+    print(('[mos2_missile] launch approved for %s (%d missiles at %.2f %.2f %.2f)'):format(
         citizenId,
         missiles,
         target.x,
@@ -116,6 +117,24 @@ RegisterNetEvent('mos2_missile:server:requestLaunch', function(payload)
     ))
 end)
 
+RegisterNetEvent('mos2_missile:server:launchStarted', function()
+    local src = source
+    local pending = pendingLaunch[src]
+    if not pending then
+        return
+    end
+
+    if GetGameTimer() > pending.expires then
+        pendingLaunch[src] = nil
+        return
+    end
+
+    pendingLaunch[src] = nil
+    cooldowns[src] = os.time() + Config.CooldownSeconds
+    TriggerClientEvent('mos2_missile:client:setCooldown', src, Config.CooldownSeconds)
+end)
+
 AddEventHandler('playerDropped', function()
     cooldowns[source] = nil
+    pendingLaunch[source] = nil
 end)

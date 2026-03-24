@@ -26,7 +26,6 @@ local function isInLaunchTruck()
     return true, vehicle
 end
 
-
 local function resolveImpactZ(x, y)
     local found, groundZ
     for height = 1000.0, 0.0, -25.0 do
@@ -44,6 +43,23 @@ local function resolveImpactZ(x, y)
     return 35.0
 end
 
+local function tryLoadMissileModel(hash, timeoutMs)
+    if not IsModelInCdimage(hash) then
+        return false
+    end
+
+    RequestModel(hash)
+    local start = GetGameTimer()
+    while not HasModelLoaded(hash) do
+        if GetGameTimer() - start > timeoutMs then
+            return false
+        end
+        Wait(0)
+    end
+
+    return true
+end
+
 local function setNui(state)
     uiOpen = state
     SetNuiFocus(state, state)
@@ -56,7 +72,6 @@ local function setNui(state)
         hasTarget = selectedTarget ~= nil
     })
 end
-
 
 RegisterNetEvent('mos2_missile:client:notify', function(msg, ntype)
     notify(msg, ntype)
@@ -149,7 +164,16 @@ RegisterNetEvent('mos2_missile:client:launchApproved', function(payload)
         return
     end
 
+    TriggerServerEvent('mos2_missile:server:launchStarted')
+
     local startPos = GetOffsetFromEntityInWorldCoords(vehicle, -1.2, -4.8, 2.3)
+    local missileHash = Config.MissileModel
+    local hasMissileModel = tryLoadMissileModel(missileHash, 2500)
+
+    if not hasMissileModel then
+        notify('موديل الصاروخ غير صالح/لم يتم تحميله، سيتم تنفيذ قصف مباشر.', 'error')
+        print('[mos2_missile] Missile model failed to load; using direct explosion fallback.')
+    end
 
     for i = 1, payload.missiles do
         local impact = vector3(
@@ -158,30 +182,33 @@ RegisterNetEvent('mos2_missile:client:launchApproved', function(payload)
             payload.target.z
         )
 
-        local missileHash = Config.MissileModel
-        RequestModel(missileHash)
-        while not HasModelLoaded(missileHash) do
-            Wait(0)
-        end
-
-        local projPos = vector3(startPos.x, startPos.y, startPos.z + (i * 0.15))
-        local rocket = CreateObjectNoOffset(missileHash, projPos.x, projPos.y, projPos.z, true, true, false)
-
+        local rocket = 0
         local timeMs = 1200 + i * 80
-        local dir = impact - projPos
-        local vel = dir / (timeMs / 1000.0)
 
-        SetEntityVelocity(rocket, vel.x, vel.y, vel.z)
+        if hasMissileModel then
+            local projPos = vector3(startPos.x, startPos.y, startPos.z + (i * 0.15))
+            rocket = CreateObjectNoOffset(missileHash, projPos.x, projPos.y, projPos.z, true, true, false)
+
+            if rocket ~= 0 and DoesEntityExist(rocket) then
+                local dir = impact - projPos
+                local vel = dir / (timeMs / 1000.0)
+                SetEntityVelocity(rocket, vel.x, vel.y, vel.z)
+            else
+                rocket = 0
+            end
+
+            PlaySoundFromCoord(-1, Config.LaunchSound, projPos.x, projPos.y, projPos.z, Config.LaunchSoundSet, true, 0, false)
+        else
+            PlaySoundFrontend(-1, 'ERROR', 'HUD_AMMO_SHOP_SOUNDSET', true)
+        end
 
         if Config.ScreenShake then
             ShakeGameplayCam('LARGE_EXPLOSION_SHAKE', Config.ScreenShakeStrength)
         end
 
-        PlaySoundFromCoord(-1, Config.LaunchSound, projPos.x, projPos.y, projPos.z, Config.LaunchSoundSet, true, 0, false)
-
         CreateThread(function()
             Wait(timeMs)
-            if DoesEntityExist(rocket) then
+            if rocket ~= 0 and DoesEntityExist(rocket) then
                 local pos = GetEntityCoords(rocket)
                 AddExplosion(pos.x, pos.y, pos.z, 29, 20.0, true, false, 1.0)
                 DeleteEntity(rocket)
@@ -191,6 +218,10 @@ RegisterNetEvent('mos2_missile:client:launchApproved', function(payload)
         end)
 
         Wait(payload.delay)
+    end
+
+    if hasMissileModel then
+        SetModelAsNoLongerNeeded(missileHash)
     end
 
     if Config.ScreenShake then
