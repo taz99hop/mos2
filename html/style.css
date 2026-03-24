@@ -1,0 +1,134 @@
+* {
+  box-sizing: border-box;
+  font-family: 'Consolas', 'Tahoma', monospace;
+}
+
+body {
+  margin: 0;
+  width: 100vw;
+  height: 100vh;
+  background: transparent;
+  overflow: hidden;
+}
+
+#panel {
+  position: absolute;
+  top: 8%;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 560px;
+  border: 2px solid #6d7c6d;
+  background: rgba(11, 20, 11, 0.95);
+  color: #d9e0d9;
+  box-shadow: 0 0 25px rgba(0,0,0,0.55);
+}
+
+.hidden { display: none; }
+
+.topbar {
+  height: 38px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 12px;
+  background: linear-gradient(90deg, #2f3c2f, #111911);
+  border-bottom: 1px solid #5e6f5e;
+  letter-spacing: 1.5px;
+}
+
+#closeBtn {
+  border: 1px solid #859285;
+  background: #2a332a;
+  color: #c9d0c9;
+  width: 30px;
+  height: 26px;
+  cursor: pointer;
+}
+
+.grid {
+  position: absolute;
+  inset: 40px 0 0 0;
+  pointer-events: none;
+  background-image:
+    linear-gradient(rgba(80, 110, 80, 0.12) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(80, 110, 80, 0.12) 1px, transparent 1px);
+  background-size: 18px 18px;
+}
+
+.content {
+  position: relative;
+  padding: 18px;
+}
+
+h1 {
+  margin: 0;
+  font-size: 22px;
+  color: #b9d1b9;
+}
+
+.sub {
+  margin: 4px 0 14px;
+  color: #8ea88e;
+}
+
+.status {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 12px;
+  color: #bed0be;
+}
+
+.warn {
+  color: #ffce7e;
+}
+
+.ok {
+  color: #93f9a3;
+}
+
+label {
+  display: block;
+  margin-bottom: 6px;
+}
+
+input {
+  width: 100%;
+  background: #0f170f;
+  border: 1px solid #5f725f;
+  color: #d8e3d8;
+  padding: 10px;
+}
+
+.actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+button {
+  padding: 11px;
+  border: 1px solid #6e806e;
+  cursor: pointer;
+  color: #e1e8e1;
+  background: #223022;
+}
+
+button.secondary {
+  background: #263226;
+}
+
+button.danger {
+  background: #5e1b1b;
+  border-color: #9f5e5e;
+}
+
+pre {
+  margin-top: 12px;
+  min-height: 70px;
+  background: #0c140c;
+  border: 1px solid #5c705c;
+  color: #d3e7d3;
+  padding: 8px;
+  white-space: pre-wrap;
+}
