@@ -55,3 +55,16 @@ add_principal identifier.fivem:YOUR_FIVEM_ID group.admin
 - إذا كانت النقطة بعيدة جدًا عن الحد المسموح، السيرفر سيرفض الطلب.
 - إذا غيرت اسم موديل المركبة، عدّل `launcherModel` داخل `client.lua`.
 - إذا غيرت موديل الصاروخ، عدّل `missileModel` داخل `client.lua`.
+
+## مكان وضع موديل الصاروخ (مهم)
+ضع ملفات الموديل داخل هذا المسار بالضبط:
+
+```
+himars_system/stream/
+```
+
+مثال:
+- `himars_system/stream/w_lr_himars.ydr`
+- `himars_system/stream/w_lr_himars.ytd`
+
+إذا ما كان مجلد `stream` موجود، تم إضافته الآن داخل الريسورس.
