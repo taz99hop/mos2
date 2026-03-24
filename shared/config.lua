@@ -25,7 +25,7 @@ Config.CooldownSeconds = 45
 Config.RequireDriverSeat = true
 
 -- If true, only specific jobs can launch
-Config.JobLocked = true
+Config.JobLocked = false
 Config.AllowedJobs = {
     ['police'] = 2,
     ['army'] = 0,

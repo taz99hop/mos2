@@ -1,6 +1,11 @@
 local QBCore = exports['qb-core']:GetCoreObject()
 local cooldowns = {}
 
+
+local function notify(src, msg, ntype)
+    TriggerClientEvent('mos2_missile:client:notify', src, msg, ntype or 'primary')
+end
+
 local function isAllowedJob(player)
     if not Config.JobLocked then
         return true
@@ -61,30 +66,30 @@ RegisterNetEvent('mos2_missile:server:requestLaunch', function(payload)
     if not player then return end
 
     if type(payload) ~= 'table' then
-        TriggerClientEvent('QBCore:Notify', src, 'بيانات إطلاق غير صالحة.', 'error')
+        notify(src, 'بيانات إطلاق غير صالحة.', 'error')
         return
     end
 
     local target = normalizeTarget(payload.target)
     if not target then
-        TriggerClientEvent('QBCore:Notify', src, 'بيانات إطلاق غير صالحة.', 'error')
+        notify(src, 'بيانات إطلاق غير صالحة.', 'error')
         return
     end
 
     if not isAllowedJob(player) then
-        TriggerClientEvent('QBCore:Notify', src, 'غير مصرح لك باستخدام نظام الإطلاق.', 'error')
+        notify(src, 'غير مصرح لك باستخدام نظام الإطلاق.', 'error')
         return
     end
 
     if not hasLaunchCard(player) then
-        TriggerClientEvent('QBCore:Notify', src, 'تحتاج بطاقة إطلاق.', 'error')
+        notify(src, 'تحتاج بطاقة إطلاق.', 'error')
         return
     end
 
     local now = os.time()
     local nextReady = cooldowns[src] or 0
     if nextReady > now then
-        TriggerClientEvent('QBCore:Notify', src, ('النظام في تبريد: %d ثانية.'):format(nextReady - now), 'error')
+        notify(src, ('النظام في تبريد: %d ثانية.'):format(nextReady - now), 'error')
         return
     end
 

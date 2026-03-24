@@ -26,6 +26,24 @@ local function isInLaunchTruck()
     return true, vehicle
 end
 
+
+local function resolveImpactZ(x, y)
+    local found, groundZ
+    for height = 1000.0, 0.0, -25.0 do
+        found, groundZ = GetGroundZFor_3dCoord(x + 0.0, y + 0.0, height, false)
+        if found then
+            return groundZ + 0.8
+        end
+    end
+
+    local waterFound, waterZ = GetWaterHeight(x + 0.0, y + 0.0, 1000.0)
+    if waterFound then
+        return waterZ
+    end
+
+    return 35.0
+end
+
 local function setNui(state)
     uiOpen = state
     SetNuiFocus(state, state)
@@ -39,6 +57,11 @@ local function setNui(state)
     })
 end
 
+
+RegisterNetEvent('mos2_missile:client:notify', function(msg, ntype)
+    notify(msg, ntype)
+end)
+
 local function chooseTargetFromWaypoint()
     local waypointBlip = GetFirstBlipInfoId(8)
     if not DoesBlipExist(waypointBlip) then
@@ -47,6 +70,8 @@ local function chooseTargetFromWaypoint()
     end
 
     local coord = GetBlipInfoIdCoord(waypointBlip)
+    local impactZ = resolveImpactZ(coord.x, coord.y)
+    coord = vector3(coord.x + 0.0, coord.y + 0.0, impactZ)
     local ok, vehicle = isInLaunchTruck()
     if not ok then
         notify('يجب أن تكون داخل شاحنة الإطلاق.', 'error')
@@ -83,6 +108,13 @@ end)
 
 RegisterNUICallback('pickTarget', function(_, cb)
     chooseTargetFromWaypoint()
+    cb(true)
+end)
+
+RegisterNUICallback('uiNotify', function(data, cb)
+    if data and data.message then
+        notify(data.message, data.type or 'error')
+    end
     cb(true)
 end)
 

@@ -35,8 +35,15 @@ function setTargetState(active) {
 closeBtn.addEventListener('click', () => nui('close'));
 pickBtn.addEventListener('click', () => nui('pickTarget'));
 launchBtn.addEventListener('click', () => {
-  if (currentCooldown > 0) return;
-  if (!hasTarget) return;
+  if (currentCooldown > 0) {
+    nui('uiNotify', { message: 'النظام في تبريد، انتظر حتى ينتهي العداد', type: 'error' });
+    return;
+  }
+
+  if (!hasTarget) {
+    nui('uiNotify', { message: 'حدد الهدف أولاً من الـ Waypoint', type: 'error' });
+    return;
+  }
 
   nui('launch', {
     missiles: Number(missileCount.value || 1),
