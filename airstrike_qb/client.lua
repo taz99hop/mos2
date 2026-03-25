@@ -2,40 +2,25 @@ local QBCore = exports['qb-core']:GetCoreObject()
 
 local activePending = nil
 local currentTarget = nil
-local placingTarget = false
 local laserMode = false
 local droneMode = false
+local uiOpen = false
+
+local function nui(action, payload)
+    SendNUIMessage({ action = action, text = payload and payload.text, coords = payload and payload.coords })
+end
+
+local function setUi(state)
+    uiOpen = state
+    SetNuiFocus(state, state)
+    nui(state and 'open' or 'close')
+end
 
 local function loadModel(model)
     if not IsModelInCdimage(model) then return false end
     RequestModel(model)
     while not HasModelLoaded(model) do Wait(0) end
     return true
-end
-
-local function drawRetroPanel(lines, danger)
-    local bg = Config.UI.background
-    local accent = danger and Config.UI.accent or Config.UI.styleColor
-
-    DrawRect(0.5, 0.90, 0.44, 0.14, bg.r, bg.g, bg.b, bg.a)
-    DrawRect(0.5, 0.84, 0.44, 0.004, accent.r, accent.g, accent.b, accent.a)
-
-    SetTextFont(4)
-    SetTextScale(0.4, 0.4)
-    SetTextColour(accent.r, accent.g, accent.b, 240)
-    SetTextCentre(true)
-    SetTextOutline()
-    BeginTextCommandDisplayText('STRING')
-    AddTextComponentSubstringPlayerName(Config.UI.header)
-    EndTextCommandDisplayText(0.5, 0.848)
-
-    SetTextScale(0.32, 0.32)
-    SetTextColour(190, 230, 140, 230)
-    for i = 1, #lines do
-        BeginTextCommandDisplayText('STRING')
-        AddTextComponentSubstringPlayerName(lines[i])
-        EndTextCommandDisplayText(0.5, 0.875 + ((i - 1) * 0.021))
-    end
 end
 
 local function rayCastFromCamera(maxDist)
@@ -75,65 +60,10 @@ local function warningSiren(durationMs)
     end)
 end
 
-local function chooseTargetFlow(cb)
-    placingTarget = true
-    CreateThread(function()
-        while placingTarget do
-            Wait(0)
-            local hit, coords = rayCastFromCamera(Config.TargetMaxDistance)
-            if hit then
-                DrawMarker(Config.Marker.type, coords.x, coords.y, coords.z + 0.15, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
-                    Config.Marker.scale.x, Config.Marker.scale.y, Config.Marker.scale.z,
-                    Config.Marker.color.r, Config.Marker.color.g, Config.Marker.color.b, Config.Marker.color.a,
-                    false, false, 2, false, nil, nil, false)
-
-                drawRetroPanel({
-                    'وضع التعيين: اختر نقطة الضربة',
-                    'E = تأكيد الهدف',
-                    'Backspace = إلغاء'
-                }, false)
-
-                if IsControlJustReleased(0, 38) then
-                    placingTarget = false
-                    currentTarget = coords
-                    cb(coords)
-                elseif IsControlJustReleased(0, 177) then
-                    placingTarget = false
-                    QBCore.Functions.Notify('تم إلغاء تحديد الهدف', 'error')
-                end
-            end
-        end
-    end)
-end
-
-local function selectStrikeType(cb)
-    CreateThread(function()
-        local selected = nil
-        while not selected do
-            Wait(0)
-            drawRetroPanel({
-                'اختيار نوع الضربة',
-                '1 = ضربة مفردة',
-                '2 = ضربة عنقودية',
-                '3 = قصف سجاد',
-                'Backspace = إلغاء'
-            }, false)
-
-            if IsControlJustReleased(0, 157) then selected = 'single' end
-            if IsControlJustReleased(0, 158) then selected = 'cluster' end
-            if IsControlJustReleased(0, 160) then selected = 'carpet' end
-            if IsControlJustReleased(0, 177) then
-                QBCore.Functions.Notify('تم إلغاء الطلب', 'error')
-                return
-            end
-        end
-        cb(selected)
-    end)
-end
-
 local function requestStrike(coords, strikeType)
     QBCore.Functions.TriggerCallback('airstrike:server:canCall', function(ok, reason)
         if not ok then
+            nui('status', { text = reason or 'تم رفض الطلب' })
             return QBCore.Functions.Notify(reason or 'تم رفض الطلب', 'error')
         end
 
@@ -141,56 +71,92 @@ local function requestStrike(coords, strikeType)
             coords = { x = coords.x, y = coords.y, z = coords.z },
             strikeType = strikeType,
         })
+        nui('status', { text = 'تم إرسال الطلب إلى القيادة...' })
     end, {
         coords = { x = coords.x, y = coords.y, z = coords.z },
         strikeType = strikeType,
     })
 end
 
-RegisterNetEvent('airstrike:client:openMenu', function()
-    selectStrikeType(function(strikeType)
-        chooseTargetFlow(function(coords)
-            requestStrike(coords, strikeType)
-        end)
-    end)
-end)
-
 if Config.UseCommand then
     RegisterCommand(Config.CommandName, function()
-        TriggerEvent('airstrike:client:openMenu')
+        setUi(true)
+        nui('status', { text = 'اختر النوع ثم حدد الهدف عبر الزر.' })
+        nui('target', { coords = currentTarget })
     end)
 
     RegisterCommand(Config.CancelCommandName, function()
         if activePending then
             TriggerServerEvent('airstrike:server:cancelStrike', activePending)
             activePending = nil
+            nui('status', { text = 'تم إرسال إلغاء الضربة.' })
         else
             QBCore.Functions.Notify('لا توجد ضربة قيد الانتظار', 'error')
         end
     end)
 end
 
+RegisterNUICallback('pick_target', function(_, cb)
+    local hit, coords = rayCastFromCamera(Config.TargetMaxDistance)
+    if hit then
+        currentTarget = coords
+        nui('target', { coords = coords })
+        nui('status', { text = 'تم قفل الهدف بنجاح.' })
+    else
+        nui('status', { text = 'لم يتم العثور على نقطة صالحة أمامك.' })
+    end
+    cb('ok')
+end)
+
+RegisterNUICallback('fire', function(data, cb)
+    if not currentTarget then
+        nui('status', { text = 'حدد الهدف أولاً.' })
+        cb('no_target')
+        return
+    end
+
+    requestStrike(currentTarget, data.strikeType or 'single')
+    cb('ok')
+end)
+
+RegisterNUICallback('cancel_pending', function(_, cb)
+    if activePending then
+        TriggerServerEvent('airstrike:server:cancelStrike', activePending)
+        activePending = nil
+        nui('status', { text = 'تم إلغاء الضربة المعلقة.' })
+    else
+        nui('status', { text = 'لا توجد ضربة معلقة حالياً.' })
+    end
+    cb('ok')
+end)
+
+RegisterNUICallback('toggle_laser', function(_, cb)
+    laserMode = not laserMode
+    nui('status', { text = laserMode and 'تم تفعيل مؤشر الليزر.' or 'تم إيقاف مؤشر الليزر.' })
+    cb('ok')
+end)
+
+RegisterNUICallback('toggle_drone', function(_, cb)
+    droneMode = not droneMode
+    nui('status', { text = droneMode and 'تم تفعيل وضع الدرون.' or 'تم إيقاف وضع الدرون.' })
+    cb('ok')
+end)
+
+RegisterNUICallback('close', function(_, cb)
+    setUi(false)
+    cb('ok')
+end)
+
 RegisterNetEvent('airstrike:client:pendingStrike', function(data)
     activePending = data.token
     local finishAt = GetGameTimer() + (data.countdown * 1000)
-    local cancelUntil = GetGameTimer() + (data.cancelWindow * 1000)
 
     CreateThread(function()
         while activePending == data.token and GetGameTimer() < finishAt do
-            Wait(0)
+            Wait(500)
             local left = math.ceil((finishAt - GetGameTimer()) / 1000)
-            local cancelLine = 'نافذة الإلغاء انتهت'
-            if GetGameTimer() < cancelUntil then
-                cancelLine = ('/%s = إلغاء قبل التنفيذ'):format(Config.CancelCommandName)
-            end
-
-            drawRetroPanel({
-                'تأكيد الضربة الصاروخية',
-                ('وقت الوصول: %s ثواني'):format(left),
-                cancelLine
-            }, true)
+            nui('status', { text = ('العد التنازلي: %s ثواني'):format(left) })
         end
-
         if activePending == data.token then
             activePending = nil
         end
@@ -221,11 +187,7 @@ local function applyImpactEffects(epicenter, explosionCfg)
     local veh = GetVehiclePedIsIn(ped, false)
     if veh ~= 0 and dist < 35.0 then
         local forward = GetEntityForwardVector(veh)
-        ApplyForceToEntity(veh, 1,
-            forward.x * explosionCfg.vehiclePushForce,
-            forward.y * explosionCfg.vehiclePushForce,
-            12.0, 0.0, 0.0, 0.0,
-            0, true, true, true, false, true)
+        ApplyForceToEntity(veh, 1, forward.x * explosionCfg.vehiclePushForce, forward.y * explosionCfg.vehiclePushForce, 12.0, 0.0, 0.0, 0.0, 0, true, true, true, false, true)
     end
 end
 
@@ -311,13 +273,7 @@ local function missileDrop(target, missileCfg, explosionCfg)
         else
             local nDir = dir / distance
             speed = math.min(speed + missileCfg.acceleration, missileCfg.maxSpeed)
-            SetEntityCoordsNoOffset(
-                missile,
-                pos.x + nDir.x * (speed * 0.01),
-                pos.y + nDir.y * (speed * 0.01),
-                pos.z + nDir.z * (speed * 0.01),
-                true, true, true
-            )
+            SetEntityCoordsNoOffset(missile, pos.x + nDir.x * (speed * 0.01), pos.y + nDir.y * (speed * 0.01), pos.z + nDir.z * (speed * 0.01), true, true, true)
             if speed > missileCfg.maxSpeed * 0.7 then
                 PlaySoundFromCoord(-1, '5_Second_Timer', pos.x, pos.y, pos.z, 'DLC_HEISTS_GENERAL_FRONTEND_SOUNDS', false, 0, false)
             end
@@ -348,11 +304,7 @@ local function computeImpact(base, strikeCfg, idx, total, randomOffset)
     end
 
     if randomOffset and randomOffset > 0.0 then
-        out = vector3(
-            out.x + GetRandomFloatInRange(-randomOffset, randomOffset),
-            out.y + GetRandomFloatInRange(-randomOffset, randomOffset),
-            out.z
-        )
+        out = vector3(out.x + GetRandomFloatInRange(-randomOffset, randomOffset), out.y + GetRandomFloatInRange(-randomOffset, randomOffset), out.z)
     end
 
     return out
@@ -388,41 +340,17 @@ RegisterNetEvent('airstrike:client:startStrike', function(data)
 end)
 
 CreateThread(function()
-    while Config.Laser.enabled do
+    while true do
         Wait(0)
-        if IsControlJustReleased(0, Config.Laser.key) then
-            laserMode = not laserMode
-            QBCore.Functions.Notify(laserMode and 'تم تفعيل مؤشر الليزر' or 'تم إيقاف مؤشر الليزر', laserMode and 'success' or 'primary')
-        end
 
         if laserMode then
             local hit, coords = rayCastFromCamera(Config.Laser.maxDistance)
             if hit then
                 DrawMarker(28, coords.x, coords.y, coords.z + 0.02, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.08, 0.08, 0.08, 255, 0, 0, 210, false, true, 2, false, nil, nil, false)
-                drawRetroPanel({
-                    'وضع الليزر مفعل',
-                    'ENTER = تنفيذ ضربة مفردة',
-                    'G = إيقاف وضع الليزر'
-                }, false)
-
                 if IsControlJustReleased(0, 191) then
                     requestStrike(coords, 'single')
                     laserMode = false
                 end
-            end
-        end
-    end
-end)
-
-CreateThread(function()
-    while Config.Drone.enabled do
-        Wait(0)
-        if IsControlJustReleased(0, 311) then
-            droneMode = not droneMode
-            if droneMode then
-                QBCore.Functions.Notify('وضع الدرون: RMB تحديد / ENTER إطلاق / K إيقاف', 'primary')
-            else
-                QBCore.Functions.Notify('تم إيقاف وضع الدرون', 'error')
             end
         end
 
@@ -430,18 +358,11 @@ CreateThread(function()
             local hit, coords = rayCastFromCamera(1200.0)
             if hit then
                 DrawMarker(6, coords.x, coords.y, coords.z + 0.1, 0.0, 0.0, 0.0, 90.0, 0.0, 0.0, 1.2, 1.2, 1.2, 80, 130, 255, 210, false, true, 2, false, nil, nil, false)
-                drawRetroPanel({
-                    'وضع الدرون العسكري',
-                    'RMB = قفل الهدف',
-                    'ENTER = تنفيذ ضربة عنقودية',
-                    'K = إنهاء الوضع'
-                }, false)
-
                 if IsControlJustReleased(0, 25) then
                     currentTarget = coords
-                    QBCore.Functions.Notify('تم قفل الهدف عبر الدرون', 'success')
+                    nui('target', { coords = currentTarget })
+                    nui('status', { text = 'تم قفل الهدف عبر الدرون.' })
                 end
-
                 if currentTarget then
                     DrawMarker(1, currentTarget.x, currentTarget.y, currentTarget.z + 0.2, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.4, 1.4, 1.0, 255, 50, 50, 160, false, true, 2, false, nil, nil, false)
                     if IsControlJustReleased(0, 191) then
