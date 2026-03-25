@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>لوحة الضربات التكتيكية</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div id="panel" class="hidden">
+    <div class="header">نظام القيادة التكتيكية</div>
+    <div class="status" id="statusText">جاهز</div>
+
+    <div class="row">
+      <label>نوع الضربة</label>
+      <select id="strikeType">
+        <option value="single">ضربة مفردة</option>
+        <option value="cluster">ضربة عنقودية</option>
+        <option value="carpet">قصف سجاد</option>
+      </select>
+    </div>
+
+    <div class="coords" id="coords">الهدف: غير محدد</div>
+
+    <div class="grid">
+      <button data-action="pick_target">تحديد الهدف</button>
+      <button data-action="fire" class="danger">تنفيذ الضربة</button>
+      <button data-action="cancel_pending">إلغاء الضربة المعلقة</button>
+      <button data-action="toggle_laser">تفعيل/إيقاف الليزر</button>
+      <button data-action="toggle_drone">تفعيل/إيقاف الدرون</button>
+      <button data-action="close">إغلاق</button>
+    </div>
+
+    <div class="hint">يمكنك تحريك الكاميرا ثم الضغط على تحديد الهدف.</div>
+  </div>
+
+  <script src="script.js"></script>
+</body>
+</html>
