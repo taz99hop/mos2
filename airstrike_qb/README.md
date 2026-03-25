@@ -1,14 +1,14 @@
 # airstrike_qb
 
-Tactical cinematic airstrike system for QBCore.
+نظام ضربات صاروخية تكتيكي سينمائي لسيرفرات QBCore بواجهة عسكرية قديمة وتعريب كامل.
 
-## Install
-1. Put folder inside `resources/[military]/airstrike_qb`
-2. Add `ensure airstrike_qb` in `server.cfg`
-3. Configure `config.lua`
+## التركيب
+1. ضع المجلد داخل `resources/[military]/airstrike_qb`
+2. أضف `ensure airstrike_qb` داخل `server.cfg`
+3. عدّل الإعدادات من `config.lua`
 
-## Commands
-- `/strike` open strike flow
-- `/strikecancel` cancel pending strike
-- `G` laser designator
-- `K` drone target mode
+## الأوامر
+- `/strike` فتح واجهة طلب الضربة
+- `/strikecancel` إلغاء الضربة قبل التنفيذ
+- `G` تفعيل/إيقاف مؤشر الليزر
+- `K` تفعيل/إيقاف وضع الدرون

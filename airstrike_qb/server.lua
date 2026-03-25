@@ -36,34 +36,34 @@ end
 
 QBCore.Functions.CreateCallback('airstrike:server:canCall', function(source, cb, payload)
     local Player = QBCore.Functions.GetPlayer(source)
-    if not Player then return cb(false, 'Player not found') end
+    if not Player then return cb(false, 'اللاعب غير موجود') end
 
     if not payload or not payload.strikeType or not payload.coords then
-        return cb(false, 'Invalid payload')
+        return cb(false, 'بيانات الطلب غير صالحة')
     end
 
     local strikeType = payload.strikeType
     if not Config.StrikeTypes[strikeType] then
-        return cb(false, 'Unknown strike type')
+        return cb(false, 'نوع الضربة غير معروف')
     end
 
     local coords = vector3(payload.coords.x, payload.coords.y, payload.coords.z)
     if isInSafeZone(coords) then
-        return cb(false, 'Target inside safe zone')
+        return cb(false, 'الهدف داخل منطقة آمنة')
     end
 
     if not hasPermission(Player) then
-        return cb(false, 'Unauthorized rank/job')
+        return cb(false, 'لا تملك صلاحية استدعاء الضربة')
     end
 
     local cdEnd = Cooldowns[source] or 0
     local remaining = cdEnd - now()
     if remaining > 0 then
-        return cb(false, ('Cooldown: %ss'):format(remaining))
+        return cb(false, ('إعادة التهيئة بعد: %s ثانية'):format(remaining))
     end
 
     if not chargePlayer(Player, strikeType) then
-        return cb(false, 'Not enough money')
+        return cb(false, 'رصيدك غير كافٍ')
     end
 
     cb(true)
@@ -80,7 +80,7 @@ RegisterNetEvent('airstrike:server:requestStrike', function(payload)
 
     local coords = vector3(payload.coords.x, payload.coords.y, payload.coords.z)
     if isInSafeZone(coords) then
-        TriggerClientEvent('QBCore:Notify', src, 'Target inside safe zone', 'error')
+        TriggerClientEvent('QBCore:Notify', src, 'الهدف داخل منطقة آمنة', 'error')
         return
     end
 

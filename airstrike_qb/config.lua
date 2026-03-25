@@ -3,7 +3,7 @@ Config = {}
 Config.UseCommand = true
 Config.CommandName = 'strike'
 Config.CancelCommandName = 'strikecancel'
-Config.OpenUiEvent = 'airstrike:client:openMenu' -- optional hook for custom UI
+Config.OpenUiEvent = 'airstrike:client:openMenu'
 
 Config.CountdownSeconds = 7
 Config.CancelWindowSeconds = 5
@@ -34,21 +34,21 @@ Config.CooldownSeconds = 180
 
 Config.StrikeTypes = {
     single = {
-        label = 'Single Strike',
+        label = 'ضربة مفردة',
         missiles = 1,
         delayBetween = 250,
         spreadRadius = 0.0,
         linePattern = false,
     },
     cluster = {
-        label = 'Cluster Strike',
+        label = 'ضربة عنقودية',
         missiles = 6,
         delayBetween = 350,
         spreadRadius = 20.0,
         linePattern = false,
     },
     carpet = {
-        label = 'Carpet Bombing',
+        label = 'قصف سجاد',
         missiles = 10,
         delayBetween = 200,
         spreadRadius = 45.0,
@@ -57,14 +57,21 @@ Config.StrikeTypes = {
 }
 
 Config.SafeZones = {
-    { coords = vector3(215.76, -810.12, 30.73), radius = 140.0 }, -- legion style example
+    { coords = vector3(215.76, -810.12, 30.73), radius = 140.0 },
     { coords = vector3(-267.0, -960.0, 31.2), radius = 90.0 }
 }
 
 Config.Warning = {
-    globalText = '⚠️ Incoming Missile Strike',
-    callerConfirm = 'Strike confirmed, incoming...',
-    cancelText = 'Strike aborted.',
+    globalText = '⚠️ تحذير عسكري: صاروخ وارد',
+    callerConfirm = 'تم تأكيد الضربة... الصاروخ في الطريق',
+    cancelText = 'تم إلغاء الضربة.',
+}
+
+Config.UI = {
+    header = 'نظام القيادة التكتيكية',
+    styleColor = { r = 145, g = 190, b = 85, a = 210 },
+    background = { r = 10, g = 18, b = 10, a = 190 },
+    accent = { r = 220, g = 60, b = 45, a = 220 }
 }
 
 Config.Explosion = {
@@ -91,7 +98,7 @@ Config.Missile = {
 
 Config.Laser = {
     enabled = true,
-    key = 47, -- G
+    key = 47,
     maxDistance = 700.0,
     requireWeapon = false,
 }
@@ -103,5 +110,5 @@ Config.Drone = {
 
 Config.AntiMissile = {
     enabled = true,
-    chance = 15, -- percent
+    chance = 15,
 }

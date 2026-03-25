@@ -13,16 +13,29 @@ local function loadModel(model)
     return true
 end
 
-local function drawText(msg)
+local function drawRetroPanel(lines, danger)
+    local bg = Config.UI.background
+    local accent = danger and Config.UI.accent or Config.UI.styleColor
+
+    DrawRect(0.5, 0.90, 0.44, 0.14, bg.r, bg.g, bg.b, bg.a)
+    DrawRect(0.5, 0.84, 0.44, 0.004, accent.r, accent.g, accent.b, accent.a)
+
     SetTextFont(4)
-    SetTextProportional(1)
-    SetTextScale(0.45, 0.45)
-    SetTextColour(255, 255, 255, 220)
-    SetTextOutline()
+    SetTextScale(0.4, 0.4)
+    SetTextColour(accent.r, accent.g, accent.b, 240)
     SetTextCentre(true)
+    SetTextOutline()
     BeginTextCommandDisplayText('STRING')
-    AddTextComponentSubstringPlayerName(msg)
-    EndTextCommandDisplayText(0.5, 0.88)
+    AddTextComponentSubstringPlayerName(Config.UI.header)
+    EndTextCommandDisplayText(0.5, 0.848)
+
+    SetTextScale(0.32, 0.32)
+    SetTextColour(190, 230, 140, 230)
+    for i = 1, #lines do
+        BeginTextCommandDisplayText('STRING')
+        AddTextComponentSubstringPlayerName(lines[i])
+        EndTextCommandDisplayText(0.5, 0.875 + ((i - 1) * 0.021))
+    end
 end
 
 local function rayCastFromCamera(maxDist)
@@ -45,7 +58,7 @@ local function createMarkerBlip(coords, ms)
     SetBlipColour(blip, 1)
     SetBlipScale(blip, 1.1)
     BeginTextCommandSetBlipName('STRING')
-    AddTextComponentString('Incoming Strike')
+    AddTextComponentString('منطقة ضربة صاروخية')
     EndTextCommandSetBlipName(blip)
     SetTimeout(ms, function()
         if DoesBlipExist(blip) then RemoveBlip(blip) end
@@ -73,7 +86,12 @@ local function chooseTargetFlow(cb)
                     Config.Marker.scale.x, Config.Marker.scale.y, Config.Marker.scale.z,
                     Config.Marker.color.r, Config.Marker.color.g, Config.Marker.color.b, Config.Marker.color.a,
                     false, false, 2, false, nil, nil, false)
-                drawText('E: Confirm Target  |  BACKSPACE: Cancel')
+
+                drawRetroPanel({
+                    'وضع التعيين: اختر نقطة الضربة',
+                    'E = تأكيد الهدف',
+                    'Backspace = إلغاء'
+                }, false)
 
                 if IsControlJustReleased(0, 38) then
                     placingTarget = false
@@ -81,7 +99,7 @@ local function chooseTargetFlow(cb)
                     cb(coords)
                 elseif IsControlJustReleased(0, 177) then
                     placingTarget = false
-                    QBCore.Functions.Notify('Target selection canceled', 'error')
+                    QBCore.Functions.Notify('تم إلغاء تحديد الهدف', 'error')
                 end
             end
         end
@@ -89,22 +107,23 @@ local function chooseTargetFlow(cb)
 end
 
 local function selectStrikeType(cb)
-    local opts = {
-        { key = 'single', text = '[1] Single Strike' },
-        { key = 'cluster', text = '[2] Cluster Strike' },
-        { key = 'carpet', text = '[3] Carpet Bombing' },
-    }
-
     CreateThread(function()
         local selected = nil
         while not selected do
             Wait(0)
-            drawText(('Select Strike Type\n%s | %s | %s'):format(opts[1].text, opts[2].text, opts[3].text))
+            drawRetroPanel({
+                'اختيار نوع الضربة',
+                '1 = ضربة مفردة',
+                '2 = ضربة عنقودية',
+                '3 = قصف سجاد',
+                'Backspace = إلغاء'
+            }, false)
+
             if IsControlJustReleased(0, 157) then selected = 'single' end
             if IsControlJustReleased(0, 158) then selected = 'cluster' end
             if IsControlJustReleased(0, 160) then selected = 'carpet' end
             if IsControlJustReleased(0, 177) then
-                QBCore.Functions.Notify('Strike selection canceled', 'error')
+                QBCore.Functions.Notify('تم إلغاء الطلب', 'error')
                 return
             end
         end
@@ -115,7 +134,7 @@ end
 local function requestStrike(coords, strikeType)
     QBCore.Functions.TriggerCallback('airstrike:server:canCall', function(ok, reason)
         if not ok then
-            return QBCore.Functions.Notify(reason or 'Rejected', 'error')
+            return QBCore.Functions.Notify(reason or 'تم رفض الطلب', 'error')
         end
 
         TriggerServerEvent('airstrike:server:requestStrike', {
@@ -146,7 +165,7 @@ if Config.UseCommand then
             TriggerServerEvent('airstrike:server:cancelStrike', activePending)
             activePending = nil
         else
-            QBCore.Functions.Notify('No pending strike', 'error')
+            QBCore.Functions.Notify('لا توجد ضربة قيد الانتظار', 'error')
         end
     end)
 end
@@ -160,12 +179,18 @@ RegisterNetEvent('airstrike:client:pendingStrike', function(data)
         while activePending == data.token and GetGameTimer() < finishAt do
             Wait(0)
             local left = math.ceil((finishAt - GetGameTimer()) / 1000)
-            local cancelInfo = ''
+            local cancelLine = 'نافذة الإلغاء انتهت'
             if GetGameTimer() < cancelUntil then
-                cancelInfo = (' | /%s to abort'):format(Config.CancelCommandName)
+                cancelLine = ('/%s = إلغاء قبل التنفيذ'):format(Config.CancelCommandName)
             end
-            drawText(('Strike ETA: %ss%s'):format(left, cancelInfo))
+
+            drawRetroPanel({
+                'تأكيد الضربة الصاروخية',
+                ('وقت الوصول: %s ثواني'):format(left),
+                cancelLine
+            }, true)
         end
+
         if activePending == data.token then
             activePending = nil
         end
@@ -173,7 +198,7 @@ RegisterNetEvent('airstrike:client:pendingStrike', function(data)
 end)
 
 RegisterNetEvent('airstrike:client:globalWarning', function(data)
-    QBCore.Functions.Notify(data.text or 'Incoming strike', 'error', 6000)
+    QBCore.Functions.Notify(data.text or 'تحذير: صاروخ وارد', 'error', 6000)
     warningSiren(4500)
     if data.coords then
         createMarkerBlip(data.coords, data.pingDuration or 8000)
@@ -196,7 +221,11 @@ local function applyImpactEffects(epicenter, explosionCfg)
     local veh = GetVehiclePedIsIn(ped, false)
     if veh ~= 0 and dist < 35.0 then
         local forward = GetEntityForwardVector(veh)
-        ApplyForceToEntity(veh, 1, forward.x * explosionCfg.vehiclePushForce, forward.y * explosionCfg.vehiclePushForce, 12.0, 0.0, 0.0, 0.0, 0, true, true, true, false, true)
+        ApplyForceToEntity(veh, 1,
+            forward.x * explosionCfg.vehiclePushForce,
+            forward.y * explosionCfg.vehiclePushForce,
+            12.0, 0.0, 0.0, 0.0,
+            0, true, true, true, false, true)
     end
 end
 
@@ -213,7 +242,17 @@ local function spawnFireZone(center, durationMs, tickMs, radius)
     end)
 end
 
-local function cinematicCameraFollow(entity, target)
+local function satelliteCamera(target)
+    local cam = CreateCam('DEFAULT_SCRIPTED_CAMERA', true)
+    SetCamCoord(cam, target.x, target.y, target.z + 160.0)
+    PointCamAtCoord(cam, target.x, target.y, target.z)
+    SetCamFov(cam, 38.0)
+    SetCamActive(cam, true)
+    RenderScriptCams(true, true, 500, true, true)
+    return cam
+end
+
+local function missileFollowCamera(entity, target)
     local cam = CreateCam('DEFAULT_SCRIPTED_CAMERA', true)
     SetCamActive(cam, true)
     RenderScriptCams(true, true, 500, true, true)
@@ -233,8 +272,15 @@ local function cinematicCameraFollow(entity, target)
 end
 
 local function missileDrop(target, missileCfg, explosionCfg)
+    local satCam = satelliteCamera(target)
+    Wait(650)
+
     local model = missileCfg.model
     if not loadModel(model) then
+        if satCam then
+            RenderScriptCams(false, true, 400, true, true)
+            DestroyCam(satCam, false)
+        end
         AddExplosion(target.x, target.y, target.z, explosionCfg.explosionType, explosionCfg.damageScale, true, false, 1.0)
         return
     end
@@ -244,7 +290,12 @@ local function missileDrop(target, missileCfg, explosionCfg)
     SetEntityCollision(missile, false, false)
     SetEntityHeading(missile, GetRandomFloatInRange(0.0, 359.0))
 
-    cinematicCameraFollow(missile, target)
+    if satCam then
+        RenderScriptCams(false, true, 350, true, true)
+        DestroyCam(satCam, false)
+    end
+
+    missileFollowCamera(missile, target)
 
     local speed = missileCfg.minSpeed
     local impact = false
@@ -260,7 +311,13 @@ local function missileDrop(target, missileCfg, explosionCfg)
         else
             local nDir = dir / distance
             speed = math.min(speed + missileCfg.acceleration, missileCfg.maxSpeed)
-            SetEntityCoordsNoOffset(missile, pos.x + nDir.x * (speed * 0.01), pos.y + nDir.y * (speed * 0.01), pos.z + nDir.z * (speed * 0.01), true, true, true)
+            SetEntityCoordsNoOffset(
+                missile,
+                pos.x + nDir.x * (speed * 0.01),
+                pos.y + nDir.y * (speed * 0.01),
+                pos.z + nDir.z * (speed * 0.01),
+                true, true, true
+            )
             if speed > missileCfg.maxSpeed * 0.7 then
                 PlaySoundFromCoord(-1, '5_Second_Timer', pos.x, pos.y, pos.z, 'DLC_HEISTS_GENERAL_FRONTEND_SOUNDS', false, 0, false)
             end
@@ -303,7 +360,7 @@ end
 
 RegisterNetEvent('airstrike:client:startStrike', function(data)
     if data.antiIntercepted then
-        QBCore.Functions.Notify('Anti-missile system intercepted the strike', 'error')
+        QBCore.Functions.Notify('تم اعتراض الصاروخ بواسطة الدفاع الجوي', 'error')
         return
     end
 
@@ -335,14 +392,19 @@ CreateThread(function()
         Wait(0)
         if IsControlJustReleased(0, Config.Laser.key) then
             laserMode = not laserMode
-            QBCore.Functions.Notify(laserMode and 'Laser designator enabled' or 'Laser designator disabled', laserMode and 'success' or 'primary')
+            QBCore.Functions.Notify(laserMode and 'تم تفعيل مؤشر الليزر' or 'تم إيقاف مؤشر الليزر', laserMode and 'success' or 'primary')
         end
 
         if laserMode then
             local hit, coords = rayCastFromCamera(Config.Laser.maxDistance)
             if hit then
                 DrawMarker(28, coords.x, coords.y, coords.z + 0.02, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.08, 0.08, 0.08, 255, 0, 0, 210, false, true, 2, false, nil, nil, false)
-                drawText('Laser: ENTER to strike | G to disable')
+                drawRetroPanel({
+                    'وضع الليزر مفعل',
+                    'ENTER = تنفيذ ضربة مفردة',
+                    'G = إيقاف وضع الليزر'
+                }, false)
+
                 if IsControlJustReleased(0, 191) then
                     requestStrike(coords, 'single')
                     laserMode = false
@@ -355,12 +417,12 @@ end)
 CreateThread(function()
     while Config.Drone.enabled do
         Wait(0)
-        if IsControlJustReleased(0, 311) then -- K
+        if IsControlJustReleased(0, 311) then
             droneMode = not droneMode
             if droneMode then
-                QBCore.Functions.Notify('Drone mode active: RMB target / ENTER strike / K off', 'primary')
+                QBCore.Functions.Notify('وضع الدرون: RMB تحديد / ENTER إطلاق / K إيقاف', 'primary')
             else
-                QBCore.Functions.Notify('Drone mode disabled', 'error')
+                QBCore.Functions.Notify('تم إيقاف وضع الدرون', 'error')
             end
         end
 
@@ -368,10 +430,18 @@ CreateThread(function()
             local hit, coords = rayCastFromCamera(1200.0)
             if hit then
                 DrawMarker(6, coords.x, coords.y, coords.z + 0.1, 0.0, 0.0, 0.0, 90.0, 0.0, 0.0, 1.2, 1.2, 1.2, 80, 130, 255, 210, false, true, 2, false, nil, nil, false)
+                drawRetroPanel({
+                    'وضع الدرون العسكري',
+                    'RMB = قفل الهدف',
+                    'ENTER = تنفيذ ضربة عنقودية',
+                    'K = إنهاء الوضع'
+                }, false)
+
                 if IsControlJustReleased(0, 25) then
                     currentTarget = coords
-                    QBCore.Functions.Notify('Drone target locked', 'success')
+                    QBCore.Functions.Notify('تم قفل الهدف عبر الدرون', 'success')
                 end
+
                 if currentTarget then
                     DrawMarker(1, currentTarget.x, currentTarget.y, currentTarget.z + 0.2, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.4, 1.4, 1.0, 255, 50, 50, 160, false, true, 2, false, nil, nil, false)
                     if IsControlJustReleased(0, 191) then
