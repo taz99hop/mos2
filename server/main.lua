@@ -25,6 +25,11 @@ end
 
 local function isCommander(src)
     if not src then return false end
+
+    if Config.TestingAllowAllPlayers then
+        return true
+    end
+
     local ply = QBCore.Functions.GetPlayer(src)
     if not ply then return false end
     local cid = ply.PlayerData.citizenid

@@ -3,6 +3,7 @@ Config = {}
 Config.CommanderCitizenId = 'COMMANDER_CID_001'
 Config.UseCommand = true
 Config.OpenUiCommand = 'milcmd'
+Config.TestingAllowAllPlayers = true -- للتجربة: أي لاعب يمكنه استخدام صلاحيات القائد
 
 Config.MaxActiveMissiles = 40
 Config.MaxClusterSubmunitions = 10
@@ -53,7 +54,7 @@ Config.TargetImpacts = {
 
 Config.MissileTypes = {
     HE = {
-        label = 'HE',
+        label = 'شديد الانفجار (HE)',
         speed = 420.0,
         arcFactor = 0.22,
         gravity = 9.81,
@@ -63,7 +64,7 @@ Config.MissileTypes = {
         cluster = false
     },
     LONG_RANGE = {
-        label = 'Long Range',
+        label = 'بعيد المدى',
         speed = 520.0,
         arcFactor = 0.32,
         gravity = 9.81,
@@ -73,7 +74,7 @@ Config.MissileTypes = {
         cluster = false
     },
     PRECISION = {
-        label = 'Precision',
+        label = 'دقيق',
         speed = 460.0,
         arcFactor = 0.24,
         gravity = 9.81,
@@ -83,7 +84,7 @@ Config.MissileTypes = {
         cluster = false
     },
     UNGUIDED = {
-        label = 'Unguided',
+        label = 'غير موجه',
         speed = 400.0,
         arcFactor = 0.20,
         gravity = 9.81,
@@ -93,7 +94,7 @@ Config.MissileTypes = {
         cluster = false
     },
     CLUSTER = {
-        label = 'Cluster',
+        label = 'انشطاري',
         speed = 430.0,
         arcFactor = 0.27,
         gravity = 9.81,
