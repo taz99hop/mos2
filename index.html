@@ -1,0 +1,126 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>ميزانيتي الذكية | إدارة مصروفاتك الشهرية بسهولة</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <div class="app-bg"></div>
+    <main class="layout">
+      <header class="hero card">
+        <div>
+          <p class="badge">تحكم كامل في أموالك</p>
+          <h1>موقعي لإدارة الحسابات الشهرية بشكل أنيق وسهل ✨</h1>
+          <p>
+            أضف دخلك ومصاريفك الشهرية، راقب الفواتير القادمة، وتتبع أهدافك المالية في
+            لوحة واحدة بتصميم عصري يساعدك تاخذ قرارات أفضل.
+          </p>
+        </div>
+        <div class="hero-stats">
+          <div class="stat-box">
+            <span>الرصيد الحالي</span>
+            <strong id="balanceValue">0 ر.س</strong>
+          </div>
+          <div class="stat-box positive">
+            <span>إجمالي الدخل</span>
+            <strong id="incomeValue">0 ر.س</strong>
+          </div>
+          <div class="stat-box negative">
+            <span>إجمالي المصروف</span>
+            <strong id="expenseValue">0 ر.س</strong>
+          </div>
+        </div>
+      </header>
+
+      <section class="grid-two">
+        <article class="card">
+          <h2>➕ إضافة عملية جديدة</h2>
+          <form id="transactionForm" class="form-grid">
+            <label>
+              نوع العملية
+              <select id="type" required>
+                <option value="income">دخل</option>
+                <option value="expense">مصروف</option>
+              </select>
+            </label>
+            <label>
+              التصنيف
+              <input id="category" type="text" placeholder="مثال: راتب / إيجار" required />
+            </label>
+            <label>
+              المبلغ (ر.س)
+              <input id="amount" type="number" min="1" step="0.01" required />
+            </label>
+            <label>
+              التاريخ
+              <input id="date" type="date" required />
+            </label>
+            <button type="submit">حفظ العملية</button>
+          </form>
+        </article>
+
+        <article class="card">
+          <h2>🎯 هدف الشهر</h2>
+          <form id="goalForm" class="goal-form">
+            <label>
+              اسم الهدف
+              <input id="goalName" type="text" placeholder="مثال: ادخار للسفر" required />
+            </label>
+            <label>
+              المبلغ المستهدف
+              <input id="goalTarget" type="number" min="1" step="0.01" required />
+            </label>
+            <button type="submit">تحديث الهدف</button>
+          </form>
+          <div class="goal-box">
+            <div>
+              <h3 id="goalTitle">لا يوجد هدف حالياً</h3>
+              <p>
+                تم الادخار: <strong id="goalSaved">0 ر.س</strong> من
+                <strong id="goalTargetText">0 ر.س</strong>
+              </p>
+            </div>
+            <div class="progress-track">
+              <div id="goalProgress" class="progress-fill"></div>
+            </div>
+          </div>
+        </article>
+      </section>
+
+      <section class="card">
+        <h2>📅 الفواتير القادمة</h2>
+        <form id="billForm" class="form-grid compact">
+          <label>
+            اسم الفاتورة
+            <input id="billName" type="text" placeholder="مثال: كهرباء" required />
+          </label>
+          <label>
+            المبلغ
+            <input id="billAmount" type="number" min="1" step="0.01" required />
+          </label>
+          <label>
+            تاريخ الاستحقاق
+            <input id="billDate" type="date" required />
+          </label>
+          <button type="submit">إضافة فاتورة</button>
+        </form>
+        <ul id="billList" class="list"></ul>
+      </section>
+
+      <section class="card">
+        <h2>📊 سجل العمليات</h2>
+        <ul id="transactionList" class="list"></ul>
+      </section>
+    </main>
+
+    <script src="app.js"></script>
+  </body>
+</html>
