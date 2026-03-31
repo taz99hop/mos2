@@ -174,6 +174,16 @@ local function attemptAirDefense(missile)
     return false
 end
 
+
+local function getLaunchPlatform(platformId)
+    for _, p in ipairs(Config.LaunchPlatforms or {}) do
+        if p.id == platformId then
+            return p
+        end
+    end
+    return (Config.LaunchPlatforms or {})[1]
+end
+
 local function createMissile(sourcePos, targetPos, typeKey, launcherName)
     local spec = Config.MissileTypes[typeKey]
     if not spec then return nil, 'Unknown missile type.' end
@@ -260,12 +270,18 @@ RegisterNetEvent('mos2:server:launchMission', function(payload)
 
     local fireCount = Ballistics.clamp(tonumber(payload.count) or 1, 1, 8)
     local missileType = payload.typeKey or 'HE'
-    local launcherPos = vector3(payload.source.x, payload.source.y, payload.source.z)
+    local platform = getLaunchPlatform(payload.launcherId)
+    if not platform then
+        notify(src, 'لا توجد منصة إطلاق معرفة في الإعدادات.', 'error')
+        return
+    end
+
+    local launcherPos = platform.muzzle
     local targetPos = vector3(payload.target.x, payload.target.y, payload.target.z)
 
     CreateThread(function()
         for i = 1, fireCount do
-            local missile, err = createMissile(launcherPos, targetPos, missileType, payload.launcherName or 'Battery-01')
+            local missile, err = createMissile(launcherPos, targetPos, missileType, platform.name)
             if missile then
                 TriggerClientEvent('mos2:client:launchAnnouncement', -1, {
                     id = missile.id,
@@ -326,6 +342,7 @@ QBCore.Functions.CreateCallback('mos2:server:getBootstrap', function(src, cb)
         commander = State.commanderSrc,
         blackout = State.blackoutLevel,
         missileTypes = Config.MissileTypes,
-        airZones = Config.AirZones
+        airZones = Config.AirZones,
+        platforms = Config.LaunchPlatforms
     })
 end)

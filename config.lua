@@ -6,6 +6,21 @@ Config.OpenUiCommand = 'milcmd'
 Config.TestingAllowAllPlayers = true -- للتجربة: أي لاعب يمكنه استخدام صلاحيات القائد
 
 Config.MaxActiveMissiles = 40
+
+Config.LaunchPlatforms = {
+    {
+        id = 'PLATFORM_ALPHA',
+        name = 'منصة ألفا',
+        muzzle = vector3(1476.0, 6336.0, 24.0),
+        heading = 180.0
+    },
+    {
+        id = 'PLATFORM_BRAVO',
+        name = 'منصة برافو',
+        muzzle = vector3(-2338.0, 3264.0, 32.0),
+        heading = 45.0
+    }
+}
 Config.MaxClusterSubmunitions = 10
 Config.ServerTickMs = 50
 Config.SequentialDelayMin = 1000

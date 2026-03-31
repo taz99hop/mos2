@@ -4,7 +4,7 @@ const commanderState = document.getElementById('commanderState');
 const blackoutState = document.getElementById('blackoutState');
 const typeSelect = document.getElementById('typeSelect');
 const countInput = document.getElementById('countInput');
-const launcherInput = document.getElementById('launcherInput');
+const launcherSelect = document.getElementById('launcherSelect');
 const fireBtn = document.getElementById('fireBtn');
 const tracksEl = document.getElementById('tracks');
 const alertsEl = document.getElementById('alerts');
@@ -40,6 +40,15 @@ async function ensureBootstrap() {
     typeSelect.appendChild(opt);
   });
 
+
+  launcherSelect.innerHTML = '';
+  (data.platforms || []).forEach((p) => {
+    const opt = document.createElement('option');
+    opt.value = p.id;
+    opt.textContent = `${p.name} (${p.id})`;
+    launcherSelect.appendChild(opt);
+  });
+
   commanderState.textContent = data.commander ? `Server ID: ${data.commander}` : 'لا يوجد قائد نشط';
   blackoutState.textContent = `Blackout: ${data.blackout || 0}%`;
   bootstrapLoaded = true;
@@ -49,7 +58,7 @@ fireBtn.addEventListener('click', async () => {
   await post('fireMission', {
     typeKey: typeSelect.value,
     count: Number(countInput.value || 1),
-    launcherName: launcherInput.value || 'Battery-01'
+    launcherId: launcherSelect.value
   });
   addAlert('تم إرسال أمر الإطلاق للقائد.');
 });
@@ -69,6 +78,17 @@ window.addEventListener('message', async (event) => {
     } else {
       app.classList.add('hidden');
     }
+  }
+
+
+  if (data.action === 'platforms') {
+    launcherSelect.innerHTML = '';
+    (data.platforms || []).forEach((p) => {
+      const opt = document.createElement('option');
+      opt.value = p.id;
+      opt.textContent = `${p.name} (${p.id})`;
+      launcherSelect.appendChild(opt);
+    });
   }
 
   if (data.action === 'commander') {

@@ -5,7 +5,8 @@ local ClientState = {
     missileEntities = {},
     radarTracks = {},
     uiOpen = false,
-    blackout = 0
+    blackout = 0,
+    platforms = {}
 }
 
 local function loadModel(model)
@@ -19,13 +20,6 @@ local function setNui(show)
     ClientState.uiOpen = show
     SetNuiFocus(show, show)
     SendNUIMessage({ action = 'toggle', show = show })
-end
-
-local function getLaunchSource()
-    local ped = PlayerPedId()
-    local coords = GetEntityCoords(ped)
-    local forward = GetEntityForwardVector(ped)
-    return vector3(coords.x + forward.x * 2.0, coords.y + forward.y * 2.0, coords.z + 1.0)
 end
 
 local function getTargetFromWaypoint()
@@ -44,10 +38,11 @@ local function spawnMissileObject(packet)
     SetEntityCollision(ent, false, false)
     SetEntityInvincible(ent, true)
 
+    packet.localSpawnTime = GetGameTimer()
     ClientState.missileEntities[packet.id] = {
         entity = ent,
         packet = packet,
-        spawnedAt = GetGameTimer()
+        spawnedAt = packet.localSpawnTime
     }
 
     UseParticleFxAssetNextCall(Config.Visual.launchFx)
@@ -134,7 +129,7 @@ CreateThread(function()
         local now = GetGameTimer()
         for id, data in pairs(ClientState.missileEntities) do
             local packet = data.packet
-            local t = (now - packet.launchTime) / 1000.0
+            local t = (now - (packet.localSpawnTime or now)) / 1000.0
             local pos = Ballistics.positionAt(packet.source, packet.velocity0, packet.spec.gravity, t)
             if DoesEntityExist(data.entity) then
                 local vel = Ballistics.velocityAt(packet.velocity0, packet.spec.gravity, t)
@@ -199,12 +194,13 @@ end)
 
 RegisterNUICallback('requestBootstrap', function(_, cb)
     QBCore.Functions.TriggerCallback('mos2:server:getBootstrap', function(data)
+        ClientState.platforms = data.platforms or {}
+        SendNUIMessage({ action = 'platforms', platforms = ClientState.platforms })
         cb(data)
     end)
 end)
 
 RegisterNUICallback('fireMission', function(data, cb)
-    local sourcePos = getLaunchSource()
     local target = getTargetFromWaypoint()
     if not target and data.laserTarget then
         target = vector3(data.laserTarget.x, data.laserTarget.y, data.laserTarget.z)
@@ -217,11 +213,10 @@ RegisterNUICallback('fireMission', function(data, cb)
     end
 
     TriggerServerEvent('mos2:server:launchMission', {
-        source = { x = sourcePos.x, y = sourcePos.y, z = sourcePos.z },
         target = { x = target.x, y = target.y, z = target.z },
         typeKey = data.typeKey,
         count = data.count,
-        launcherName = data.launcherName
+        launcherId = data.launcherId
     })
 
     cb({ ok = true })
