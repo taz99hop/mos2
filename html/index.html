@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1.0" />
+  <title>MOS2 Command</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div id="app" class="hidden">
+    <header>
+      <h1>مركز القيادة العسكرية MOS2</h1>
+      <button id="closeBtn">إغلاق</button>
+    </header>
+
+    <section class="grid">
+      <div class="panel">
+        <h2>وضع القائد</h2>
+        <p id="commanderState">غير معروف</p>
+        <p id="blackoutState">Blackout: 0%</p>
+      </div>
+
+      <div class="panel">
+        <h2>إطلاق الصواريخ</h2>
+        <label>نوع الصاروخ</label>
+        <select id="typeSelect"></select>
+
+        <label>عدد الصواريخ (Sequential)</label>
+        <input id="countInput" type="number" min="1" max="8" value="1" />
+
+        <label>اسم منصة الإطلاق</label>
+        <input id="launcherInput" type="text" value="Battery-01" />
+
+        <button id="fireBtn">إطلاق المهمة</button>
+      </div>
+
+      <div class="panel">
+        <h2>الرادار الحي</h2>
+        <p id="radarState">Online</p>
+        <ul id="tracks"></ul>
+      </div>
+
+      <div class="panel">
+        <h2>الإنذارات</h2>
+        <ul id="alerts"></ul>
+      </div>
+    </section>
+  </div>
+  <script src="app.js"></script>
+</body>
+</html>
