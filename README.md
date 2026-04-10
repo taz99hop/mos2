@@ -35,3 +35,21 @@
   - الموديل ليس Stream-ready أو ناقص ملفات `.ytd`/`.ytyp`.
   - ترتيب `ensure` في `server.cfg` خطأ.
 - الكود يستخدم `RequestModel` مع loop انتظار، لذلك عند توفر الموديل بشكل صحيح لن يختفي أثناء الاستخدام.
+
+
+## هيكلة المجلدات المطلوبة
+
+لازم يكون عندك نفس الهيكلة داخل الريسورس:
+
+```
+mos2/
+├─ fxmanifest.lua
+├─ config.lua
+├─ client.lua
+├─ server.lua
+└─ stream/
+   ├─ cube.ydr
+   ├─ cylinder.ydr
+   ├─ (اختياري) ملفات .ytd
+   └─ (اختياري) ملفات .ytyp
+```
