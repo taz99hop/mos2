@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Resistance Cinematic</title>
+  <style>
+    body { margin:0; font-family: Tahoma, Arial, sans-serif; display:none; }
+    #overlay { position:fixed; inset:0; background:#000; color:#fff; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:18px; }
+    #overlay img { max-width:65vw; max-height:45vh; border:2px solid #991b1b; box-shadow:0 0 30px rgba(220,38,38,.35); }
+    #txt { font-size:44px; font-weight:700; text-align:center; max-width:90vw; }
+  </style>
+</head>
+<body>
+  <div id="overlay">
+    <img id="img" src="" alt="broadcast" />
+    <div id="txt"></div>
+    <audio id="audio" preload="auto"></audio>
+  </div>
+  <script>
+    window.addEventListener('message', (e) => {
+      const d = e.data;
+      if (d.action !== 'cinematic') return;
+      if (!d.show) {
+        document.body.style.display = 'none';
+        const a = document.getElementById('audio');
+        a.pause();
+        a.currentTime = 0;
+        return;
+      }
+      document.body.style.display = 'block';
+      document.getElementById('txt').textContent = d.data?.message || '';
+      document.getElementById('img').src = d.data?.image || '';
+      const a = document.getElementById('audio');
+      a.src = d.data?.audio || '';
+      a.volume = 0.6;
+      a.play().catch(() => {});
+    });
+  </script>
+</body>
+</html>
