@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>لوحة الصومعة</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <main id="app" class="hidden">
+    <section class="panel">
+      <header>
+        <h1>نظام الإطلاق الباليستي - القاعدة تحت الأرض</h1>
+        <button id="closeBtn">إغلاق</button>
+      </header>
+
+      <div class="grid">
+        <div class="card">
+          <h2>حالة المنظومة</h2>
+          <ul>
+            <li>البوابة: <span id="stateOpen">مغلقة</span></li>
+            <li>المنصة: <span id="stateRise">أسفل</span></li>
+            <li>الذراع: <span id="stateArm">أفقي</span></li>
+            <li>الجاهزية: <span id="stateReady">غير جاهز</span></li>
+            <li>التسلسل: <span id="stateSequence">idle</span></li>
+          </ul>
+        </div>
+
+        <div class="card">
+          <h2>نوع الصاروخ</h2>
+          <select id="missileType">
+            <option value="tactical">Tactical</option>
+            <option value="emp">EMP</option>
+            <option value="chemical">Chemical</option>
+            <option value="nuclear">Nuclear ICBM</option>
+          </select>
+          <p class="note">كل نوع يستخدم Offset منفصل لضبط تموضع الذراع.</p>
+        </div>
+
+        <div class="card">
+          <h2>إحداثيات الهدف</h2>
+          <div class="target-grid">
+            <label>X <input id="targetX" type="number" step="0.01"/></label>
+            <label>Y <input id="targetY" type="number" step="0.01"/></label>
+            <label>Z <input id="targetZ" type="number" step="0.01"/></label>
+          </div>
+          <button id="targetBtn">تأمين الهدف</button>
+        </div>
+
+        <div class="card wide">
+          <h2>لوحة الأوامر</h2>
+          <div class="actions">
+            <button data-action="open_hatch">فتح البوابة</button>
+            <button data-action="raise_platform">رفع المنصة</button>
+            <button data-action="arm_target">تجهيز الذراع</button>
+            <button data-action="launch" class="danger">إطلاق</button>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <script src="app.js"></script>
+</body>
+</html>
