@@ -3,30 +3,11 @@ local QBCore = exports['qb-core']:GetCoreObject()
 local LaunchPads = {}
 local NextPadId = 1
 
-local function isAdmin(src)
-    local player = QBCore.Functions.GetPlayer(src)
-    if not player then
-        return false
-    end
-
-    if QBCore.Functions.HasPermission(src, Config.AdminPermission) then
-        return true
-    end
-
-    local group = player.PlayerData.group
-    return group == 'admin' or group == 'god'
-end
-
 local function syncPads(target)
     TriggerClientEvent('rocket_system:client:syncPads', target or -1, LaunchPads)
 end
 
 local function removePad(src, id)
-    if not isAdmin(src) then
-        TriggerClientEvent('QBCore:Notify', src, _L('no_permission'), 'error')
-        return
-    end
-
     id = tonumber(id)
     if not id or not LaunchPads[id] then
         TriggerClientEvent('QBCore:Notify', src, _L('no_pad_found'), 'error')
@@ -40,10 +21,6 @@ end
 
 RegisterNetEvent('rocket_system:server:createPad', function(coords, heading)
     local src = source
-    if not isAdmin(src) then
-        TriggerClientEvent('QBCore:Notify', src, _L('no_permission'), 'error')
-        return
-    end
 
     local id = NextPadId
     NextPadId = NextPadId + 1
@@ -140,16 +117,16 @@ QBCore.Functions.CreateCallback('rocket_system:server:canFire', function(source,
     TriggerClientEvent('QBCore:Notify', source, _L('rocket_fired'), 'success')
 end)
 
-QBCore.Commands.Add('rocket:createpad', 'Create rocket launch pad (Admin)', {}, false, function(source)
+QBCore.Commands.Add('rocketcreatepad', 'Create rocket launch pad', {}, false, function(source)
     TriggerClientEvent('rocket_system:client:createPadAtPlayer', source)
 end)
 
-QBCore.Commands.Add('rocket:removepad', 'Remove rocket launch pad by id (Admin)', {
+QBCore.Commands.Add('rocketremovepad', 'Remove rocket launch pad by id', {
     { name = 'id', help = 'Pad ID' }
 }, true, function(source, args)
     removePad(source, tonumber(args[1]))
 end)
 
-QBCore.Commands.Add('rocket:status', 'Show rocket system status', {}, false, function(source)
+QBCore.Commands.Add('rocketstatus', 'Show rocket system status', {}, false, function(source)
     TriggerClientEvent('rocket_system:client:showStatus', source)
 end)
