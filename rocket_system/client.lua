@@ -35,6 +35,39 @@ local function loadPtfx(dict)
     end
 end
 
+
+local function openMenuCompat(entries)
+    local rc2State = GetResourceState('Rc2menu')
+    if rc2State == 'started' then
+        local ok = pcall(function()
+            exports['Rc2menu']:openMenu(entries)
+        end)
+        if ok then
+            return true
+        end
+
+        ok = pcall(function()
+            exports['Rc2menu']:OpenMenu(entries)
+        end)
+        if ok then
+            return true
+        end
+    end
+
+    local qbState = GetResourceState('qb-menu')
+    if qbState == 'started' then
+        local ok = pcall(function()
+            exports['qb-menu']:openMenu(entries)
+        end)
+        if ok then
+            return true
+        end
+    end
+
+    TriggerEvent('QBCore:Notify', 'No supported menu resource found (Rc2menu/qb-menu).', 'error')
+    return false
+end
+
 local function spawnPadEntities(pad)
     if PadEntities[pad.id] then
         return
@@ -302,7 +335,7 @@ RegisterNetEvent('rocket_system:client:openPadMenu', function(id)
         return
     end
 
-    exports['qb-menu']:openMenu({
+    openMenuCompat({
         {
             header = _L('menu_title'),
             isMenuHeader = true
@@ -388,7 +421,7 @@ RegisterNetEvent('rocket_system:client:openAngleMenu', function(data)
         }
     end
 
-    exports['qb-menu']:openMenu(entries)
+    openMenuCompat(entries)
 end)
 
 RegisterNetEvent('rocket_system:client:setAngle', function(data)
