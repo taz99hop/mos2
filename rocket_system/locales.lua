@@ -57,13 +57,13 @@ Config.AdminPermission = 'admin'
 Config.Models = {
     base = `prop_mil_crate_01`,
     arm = `prop_rub_cont_04b`,
-    launcher = `prop_missile_01`
+    launcher = `prop_rocket_01`
 }
 
 Config.ModelFallbacks = {
     base = { `prop_tool_bench02_ld`, `prop_box_wood05a` },
     arm = { `prop_barrel_02a`, `prop_cs_cardbox_01` },
-    launcher = { `w_lr_rpg_rocket`, `prop_rocket_01` }
+    launcher = { `prop_missile_01`, `prop_sam_01` }
 }
 
 Config.Explosion = {

@@ -232,32 +232,52 @@ local function launchRocket(pad)
     )
 
     local rocket = CreateObject(rocketModel, origin.x, origin.y, origin.z, true, true, false)
-    SetEntityCollision(rocket, false, false)
+    if not DoesEntityExist(rocket) then
+        QBCore.Functions.Notify('Rocket entity failed to spawn.', 'error')
+        return
+    end
+
+    SetEntityCollision(rocket, true, true)
     SetEntityDynamic(rocket, false)
+    SetEntityRotation(rocket, -pad.armAngle, 0.0, pad.heading, 2, true)
 
     local speed = Config.Rocket.Speed
-    local vx = math.cos(headingRad) * speed * 0.1
-    local vy = math.sin(headingRad) * speed * 0.1
-    local vz = math.sin(angleRad) * speed * 0.1
+    local horizontal = math.cos(angleRad) * speed
+    local vx = math.cos(headingRad) * horizontal
+    local vy = math.sin(headingRad) * horizontal
+    local vz = math.sin(angleRad) * speed
+    local gravity = Config.Rocket.Gravity * 9.81
 
     ActiveRockets[rocket] = true
     playLaunchEffects(origin)
 
+    loadPtfx('core')
+    UseParticleFxAssetNextCall('core')
+    local trailFx = StartParticleFxLoopedOnEntity('exp_grd_burst_fire', rocket, 0.0, -0.9, 0.0, 0.0, 0.0, 0.0, 0.7, false, false, false)
+
     CreateThread(function()
-        while ActiveRockets[rocket] do
+        local lastTick = GetGameTimer()
+        local startTick = lastTick
+
+        while ActiveRockets[rocket] and DoesEntityExist(rocket) do
             Wait(0)
+
+            local now = GetGameTimer()
+            local dt = (now - lastTick) / 1000.0
+            lastTick = now
+            if dt <= 0.0 then
+                dt = 0.016
+            elseif dt > 0.05 then
+                dt = 0.05
+            end
+
             local pos = GetEntityCoords(rocket)
 
-            -- velocity update
-            vx = math.cos(headingRad) * speed * 0.1
-            vy = math.sin(headingRad) * speed * 0.1
-            vz = vz - Config.Rocket.Gravity * 0.1
-
-            -- position update
-            local newPos = vec3(pos.x + vx, pos.y + vy, pos.z + vz)
+            -- Physics update (true projectile arc)
+            vz = vz - gravity * dt
+            local newPos = vec3(pos.x + (vx * dt), pos.y + (vy * dt), pos.z + (vz * dt))
             SetEntityCoordsNoOffset(rocket, newPos.x, newPos.y, newPos.z, false, false, false)
 
-            -- update orientation
             local length = math.sqrt((vx * vx) + (vy * vy) + (vz * vz))
             if length > 0.01 then
                 local pitch = math.deg(math.asin(-vz / length))
@@ -265,22 +285,17 @@ local function launchRocket(pad)
                 SetEntityRotation(rocket, pitch, 0.0, yaw, 2, true)
             end
 
-            UseParticleFxAssetNextCall('core')
-            StartParticleFxNonLoopedOnEntity('exp_grd_burst_fire', rocket, 0.0, -1.2, 0.0, 0.0, 0.0, 0.0, 0.7, false, false, false)
+            local foundGround, groundZ = GetGroundZFor_3dCoord(newPos.x, newPos.y, newPos.z + 1.0, false)
+            local hitGround = foundGround and newPos.z <= (groundZ + 0.15) and vz < 0.0
+            local expired = (now - startTick) > 15000
 
-            local hit, hitPos = GetGroundZFor_3dCoord(newPos.x, newPos.y, newPos.z, false)
-            if (hit and newPos.z <= (hitPos + 0.3)) or vz < -5.0 then
+            if hitGround or expired then
                 ActiveRockets[rocket] = nil
+                if trailFx then
+                    StopParticleFxLooped(trailFx, 0)
+                end
                 DeleteEntity(rocket)
-                createMegaExplosion(newPos)
-                break
-            end
-
-            speed = speed * 0.999
-            if speed < 1.0 then
-                ActiveRockets[rocket] = nil
-                DeleteEntity(rocket)
-                createMegaExplosion(newPos)
+                createMegaExplosion(hitGround and vec3(newPos.x, newPos.y, groundZ + 0.1) or newPos)
                 break
             end
         end
