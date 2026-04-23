@@ -13,6 +13,21 @@ local function loadModel(model)
     return true
 end
 
+
+local function resolveModel(primary, fallbacks)
+    if loadModel(primary) then
+        return primary
+    end
+
+    for _, model in ipairs(fallbacks or {}) do
+        if loadModel(model) then
+            return model
+        end
+    end
+
+    return nil
+end
+
 local function loadPtfx(dict)
     RequestNamedPtfxAsset(dict)
     while not HasNamedPtfxAssetLoaded(dict) do
@@ -25,15 +40,19 @@ local function spawnPadEntities(pad)
         return
     end
 
-    if not loadModel(Config.Models.base) or not loadModel(Config.Models.arm) then
+    local baseModel = resolveModel(Config.Models.base, Config.ModelFallbacks.base)
+    local armModel = resolveModel(Config.Models.arm, Config.ModelFallbacks.arm)
+
+    if not baseModel or not armModel then
+        QBCore.Functions.Notify('Pad models failed to load. Check prop names.', 'error')
         return
     end
 
-    local base = CreateObject(Config.Models.base, pad.coords.x, pad.coords.y, pad.coords.z, false, false, false)
+    local base = CreateObject(baseModel, pad.coords.x, pad.coords.y, pad.coords.z, false, false, false)
     SetEntityHeading(base, pad.heading)
     FreezeEntityPosition(base, true)
 
-    local arm = CreateObject(Config.Models.arm, pad.coords.x, pad.coords.y, pad.coords.z + 0.75, false, false, false)
+    local arm = CreateObject(armModel, pad.coords.x, pad.coords.y, pad.coords.z + 0.75, false, false, false)
     SetEntityHeading(arm, pad.heading)
     AttachEntityToEntity(arm, base, 0, 0.0, 0.2, 0.55, -pad.armAngle, 0.0, 0.0, false, false, false, false, 2, true)
 
@@ -163,7 +182,9 @@ local function createMegaExplosion(pos)
 end
 
 local function launchRocket(pad)
-    if not loadModel(Config.Models.launcher) then
+    local rocketModel = resolveModel(Config.Models.launcher, Config.ModelFallbacks.launcher)
+    if not rocketModel then
+        QBCore.Functions.Notify('Rocket model failed to load.', 'error')
         return
     end
 
@@ -177,7 +198,7 @@ local function launchRocket(pad)
         pad.coords.z + oz
     )
 
-    local rocket = CreateObject(Config.Models.launcher, origin.x, origin.y, origin.z, true, true, false)
+    local rocket = CreateObject(rocketModel, origin.x, origin.y, origin.z, true, true, false)
     SetEntityCollision(rocket, false, false)
     SetEntityDynamic(rocket, false)
 
@@ -242,7 +263,13 @@ RegisterNetEvent('rocket_system:client:createPadAtPlayer', function()
     local pos = GetEntityCoords(ped)
     local heading = GetEntityHeading(ped)
 
-    TriggerServerEvent('rocket_system:server:createPad', pos, heading)
+    local forward = GetEntityForwardVector(ped)
+    local targetX = pos.x + forward.x * 2.0
+    local targetY = pos.y + forward.y * 2.0
+    local foundGround, groundZ = GetGroundZFor_3dCoord(targetX, targetY, pos.z + 100.0, false)
+
+    local spawnPos = vec3(targetX, targetY, foundGround and groundZ or pos.z)
+    TriggerServerEvent('rocket_system:server:createPad', spawnPos, heading)
 end)
 
 RegisterNetEvent('rocket_system:client:launchRocket', function(padId, pad)
