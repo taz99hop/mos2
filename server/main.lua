@@ -21,11 +21,14 @@ local function makeMissileId()
 end
 
 local function ensureModel(model)
-    if not IsModelInCdimage(model) then return false end
-    RequestModel(model)
-    while not HasModelLoaded(model) do
-        Wait(0)
+    if type(model) ~= 'number' then
+        model = joaat(model)
     end
+
+    -- بعض نسخ FiveM لا توفر IsModelInCdimage على السيرفر
+    if type(IsModelInCdimage) == 'function' and not IsModelInCdimage(model) then return false end
+    if type(IsModelValid) == 'function' and not IsModelValid(model) then return false end
+
     return true
 end
 
