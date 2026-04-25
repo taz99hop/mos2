@@ -37,6 +37,16 @@ local function broadcastState(id)
     TriggerClientEvent('mos2:client:updateMissileState', -1, id, missiles[id])
 end
 
+local function markNetGlobal(netId)
+    if not netId then return end
+    if type(SetNetworkIdExistsOnAllMachines) == 'function' then
+        SetNetworkIdExistsOnAllMachines(netId, true)
+    end
+    if type(SetNetworkIdCanMigrate) == 'function' then
+        SetNetworkIdCanMigrate(netId, true)
+    end
+end
+
 local function createMissileAtStage(coords, heading, stage)
     local model = stage == 1 and Config.MissileModels.stage1 or stage == 2 and Config.MissileModels.stage2 or Config.MissileModels.complete
     if not ensureModel(model) then return nil end
@@ -47,7 +57,7 @@ local function createMissileAtStage(coords, heading, stage)
     SetEntityHeading(obj, heading)
     FreezeEntityPosition(obj, true)
     local netId = NetworkGetNetworkIdFromEntity(obj)
-    SetNetworkIdExistsOnAllMachines(netId, true)
+    markNetGlobal(netId)
     return obj, netId
 end
 
@@ -193,7 +203,7 @@ RegisterNetEvent('mos2:server:spawnTransport', function(idOrData)
 
     local veh = CreateVehicle(Config.TransportTruckModel, spawn.x, spawn.y, spawn.z, GetEntityHeading(ped) + Config.TransportSpawnOffset.w, true, true)
     local netId = NetworkGetNetworkIdFromEntity(veh)
-    SetNetworkIdExistsOnAllMachines(netId, true)
+    markNetGlobal(netId)
     SetVehicleDoorsLocked(veh, 1)
 
     TriggerClientEvent('mos2:client:spawnTransport', src, netId)
