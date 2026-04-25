@@ -101,12 +101,14 @@ end
 local function updateMissileEntity(id, netId)
     if not missiles[id] then missiles[id] = {} end
     missiles[id].netId = netId
-    missiles[id].entity = NetToObj(netId)
+    missiles[id].entity = nil
 
     CreateThread(function()
         local timeout = 0
         while (not missiles[id].entity or not DoesEntityExist(missiles[id].entity)) and timeout < 120 do
-            missiles[id].entity = NetToObj(netId)
+            if NetworkDoesEntityExistWithNetworkId(netId) then
+                missiles[id].entity = NetToObj(netId)
+            end
             timeout = timeout + 1
             Wait(100)
         end
@@ -178,7 +180,7 @@ RegisterNetEvent('mos2:client:runCraftSequence', function(craftData)
     TaskTurnPedToFaceCoord(ped, coords.x, coords.y, coords.z, 1000)
     Wait(250)
 
-    QBCore.Functions.Progressbar('mos2_craft_' .. id, 'جاري تصنيع الصاروخ...', Config.StageDurations.total, false, true, {
+    QBCore.Functions.Progressbar('mos2_craft_' .. id, 'جاري تصنيع الصاروخ...', Config.StageDurations.total, false, false, {
         disableMovement = true,
         disableCarMovement = true,
         disableMouse = false,
@@ -192,8 +194,7 @@ RegisterNetEvent('mos2:client:runCraftSequence', function(craftData)
         QBCore.Functions.Notify('اكتمل تصنيع الصاروخ. الآن يمكنك البرمجة والنقل.', 'success')
     end, function()
         ClearPedTasks(ped)
-        TriggerServerEvent('mos2:server:cancelCraft', id)
-        QBCore.Functions.Notify('تم إلغاء التصنيع.', 'error')
+        QBCore.Functions.Notify('تعذر إكمال التصنيع، أعد المحاولة.', 'error')
     end)
 
     updateMissileEntity(id, craftData.netId)
