@@ -56,8 +56,8 @@ local function makeMissileTarget(id)
             {
                 icon = 'fas fa-unlink',
                 label = 'فك التثبيت',
-                type = 'server',
-                event = 'mos2:server:detachMissile',
+                type = 'client',
+                event = 'mos2:client:targetDetachMissile',
                 args = id,
                 canInteract = function()
                     return missileData.attachedTruck ~= nil and not missileData.launched
@@ -76,8 +76,8 @@ local function makeMissileTarget(id)
             {
                 icon = 'fas fa-dolly',
                 label = 'نقل للمنصة',
-                type = 'server',
-                event = 'mos2:server:moveToLaunchPad',
+                type = 'client',
+                event = 'mos2:client:targetMoveToPad',
                 args = id,
                 canInteract = function()
                     return missileData.complete and not missileData.launched
@@ -86,8 +86,8 @@ local function makeMissileTarget(id)
             {
                 icon = 'fas fa-rocket',
                 label = 'إطلاق',
-                type = 'server',
-                event = 'mos2:server:requestLaunch',
+                type = 'client',
+                event = 'mos2:client:targetLaunchMissile',
                 args = id,
                 canInteract = function()
                     return missileData.complete and missileData.programmedTarget ~= nil and not missileData.launched
@@ -154,14 +154,14 @@ CreateThread(function()
             {
                 icon = 'fas fa-rocket',
                 label = 'ابدأ تصنيع صاروخ',
-                type = 'server',
-                event = 'mos2:server:startCraft'
+                type = 'client',
+                event = 'mos2:client:targetStartCraft'
             },
             {
                 icon = 'fas fa-truck',
                 label = 'طلب شاحنة نقل',
-                type = 'server',
-                event = 'mos2:server:requestTruckForOwner'
+                type = 'client',
+                event = 'mos2:client:targetRequestTruck'
             }
         },
         distance = 2.5
@@ -235,6 +235,30 @@ local function resolveId(idOrData)
     end
     return idOrData
 end
+
+RegisterNetEvent('mos2:client:targetStartCraft', function()
+    QBCore.Functions.Notify('تم إرسال طلب التصنيع...', 'primary')
+    TriggerServerEvent('mos2:server:startCraft')
+end)
+
+RegisterNetEvent('mos2:client:targetRequestTruck', function()
+    TriggerServerEvent('mos2:server:requestTruckForOwner')
+end)
+
+RegisterNetEvent('mos2:client:targetDetachMissile', function(idOrData)
+    local id = resolveId(idOrData)
+    TriggerServerEvent('mos2:server:detachMissile', id)
+end)
+
+RegisterNetEvent('mos2:client:targetMoveToPad', function(idOrData)
+    local id = resolveId(idOrData)
+    TriggerServerEvent('mos2:server:moveToLaunchPad', id)
+end)
+
+RegisterNetEvent('mos2:client:targetLaunchMissile', function(idOrData)
+    local id = resolveId(idOrData)
+    TriggerServerEvent('mos2:server:requestLaunch', id)
+end)
 
 RegisterNetEvent('mos2:client:carryMissile', function(idOrData)
     local id = resolveId(idOrData)
