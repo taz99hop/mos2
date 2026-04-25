@@ -8,7 +8,8 @@ local launcher = {
     rope = nil,
     selectedTarget = nil,
     launching = false,
-    initialized = false
+    initialized = false,
+    zones = {}
 }
 
 local function loadModel(model)
@@ -150,7 +151,7 @@ local function buildMenu()
         params = { event = 'qb-menu:closeMenu' }
     }
 
-    exports['qb-menu']:openMenu(menu)
+    TriggerEvent('qb-menu:client:openMenu', menu)
 end
 
 RegisterNetEvent('missile:client:setTarget', function(index)
@@ -335,7 +336,24 @@ RegisterNetEvent('missile:client:openTargets', function()
 end)
 
 local function addTargetInteractions()
-    exports['qb-target']:AddTargetEntity(launcher.button, {
+    if not launcher.platform or not DoesEntityExist(launcher.platform) then
+        print('[missile] platform entity does not exist, cannot register target zones')
+        return
+    end
+
+    local buttonCoords = GetEntityCoords(launcher.button)
+    local platformCoords = GetEntityCoords(launcher.platform)
+
+    launcher.zones.button = 'missile_launch_button_zone'
+    launcher.zones.platform = 'missile_platform_zone'
+
+    exports['qb-target']:AddBoxZone(launcher.zones.button, buttonCoords, 0.8, 0.8, {
+        name = launcher.zones.button,
+        heading = GetEntityHeading(launcher.button),
+        minZ = buttonCoords.z - 0.4,
+        maxZ = buttonCoords.z + 0.8,
+        debugPoly = false
+    }, {
         options = {
             {
                 icon = 'fas fa-bullseye',
@@ -355,7 +373,13 @@ local function addTargetInteractions()
         distance = Config.LaunchSite.interactionDistance
     })
 
-    exports['qb-target']:AddTargetEntity(launcher.platform, {
+    exports['qb-target']:AddBoxZone(launcher.zones.platform, platformCoords, 2.2, 2.2, {
+        name = launcher.zones.platform,
+        heading = GetEntityHeading(launcher.platform),
+        minZ = platformCoords.z - 1.0,
+        maxZ = platformCoords.z + 2.5,
+        debugPoly = false
+    }, {
         options = {
             {
                 icon = 'fas fa-satellite-dish',
@@ -365,7 +389,7 @@ local function addTargetInteractions()
                 end
             }
         },
-        distance = Config.LaunchSite.interactionDistance
+        distance = Config.LaunchSite.interactionDistance + 1.0
     })
 end
 
@@ -396,6 +420,11 @@ local function spawnLauncher()
     SetEntityHeading(launcher.button, Config.LaunchSite.heading + 35.0)
     FreezeEntityPosition(launcher.button, true)
 
+    if not DoesEntityExist(launcher.platform) or not DoesEntityExist(launcher.arm) or not DoesEntityExist(launcher.button) then
+        print('[missile] one or more launcher props failed to spawn')
+        return
+    end
+
     createCable()
     createMissileAttached()
     addTargetInteractions()
@@ -421,6 +450,16 @@ AddEventHandler('onResourceStop', function(resource)
     end
 
     cleanupMissile()
+
+    if launcher.zones.button then
+        exports['qb-target']:RemoveZone(launcher.zones.button)
+        launcher.zones.button = nil
+    end
+
+    if launcher.zones.platform then
+        exports['qb-target']:RemoveZone(launcher.zones.platform)
+        launcher.zones.platform = nil
+    end
 
     if launcher.arm and DoesEntityExist(launcher.arm) then DeleteEntity(launcher.arm) end
     if launcher.button and DoesEntityExist(launcher.button) then DeleteEntity(launcher.button) end
