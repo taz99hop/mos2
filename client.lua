@@ -37,6 +37,20 @@ local function showNotify(message, nType)
     QBCore.Functions.Notify(message, nType or 'primary')
 end
 
+local function ensureNetworkedEntity(entity)
+    if not entity or entity == 0 or not DoesEntityExist(entity) then return end
+
+    if not NetworkGetEntityIsNetworked(entity) then
+        NetworkRegisterEntityAsNetworked(entity)
+    end
+
+    local netId = NetworkGetNetworkIdFromEntity(entity)
+    if netId and netId ~= 0 then
+        SetNetworkIdCanMigrate(netId, true)
+        SetNetworkIdExistsOnAllMachines(netId, true)
+    end
+end
+
 local function cleanupMissile()
     if launcher.missile and DoesEntityExist(launcher.missile) then
         DeleteEntity(launcher.missile)
@@ -54,6 +68,7 @@ local function createMissileAttached()
 
     local armCoords = GetEntityCoords(launcher.arm)
     launcher.missile = CreateObject(hash, armCoords.x, armCoords.y, armCoords.z + 0.5, true, true, false)
+    ensureNetworkedEntity(launcher.missile)
     SetEntityAsMissionEntity(launcher.missile, true, true)
     AttachEntityToEntity(
         launcher.missile,
@@ -405,18 +420,21 @@ local function spawnLauncher()
         return
     end
 
-    launcher.platform = CreateObject(platformHash, Config.LaunchSite.coords.x, Config.LaunchSite.coords.y, Config.LaunchSite.coords.z - 1.0, false, true, false)
+    launcher.platform = CreateObject(platformHash, Config.LaunchSite.coords.x, Config.LaunchSite.coords.y, Config.LaunchSite.coords.z - 1.0, true, true, false)
+    ensureNetworkedEntity(launcher.platform)
     SetEntityHeading(launcher.platform, Config.LaunchSite.heading)
     FreezeEntityPosition(launcher.platform, true)
 
     local armWorld = GetOffsetFromEntityInWorldCoords(launcher.platform, Config.ArmOffset.x, Config.ArmOffset.y, Config.ArmOffset.z)
-    launcher.arm = CreateObject(armHash, armWorld.x, armWorld.y, armWorld.z, false, true, false)
+    launcher.arm = CreateObject(armHash, armWorld.x, armWorld.y, armWorld.z, true, true, false)
+    ensureNetworkedEntity(launcher.arm)
     SetEntityHeading(launcher.arm, Config.LaunchSite.heading)
     FreezeEntityPosition(launcher.arm, true)
     AttachEntityToEntity(launcher.arm, launcher.platform, 0, Config.ArmOffset.x, Config.ArmOffset.y, Config.ArmOffset.z, Config.Launch.armStartPitch, 0.0, 0.0, false, false, false, false, 2, true)
 
     local buttonWorld = GetOffsetFromEntityInWorldCoords(launcher.platform, Config.ButtonOffset.x, Config.ButtonOffset.y, Config.ButtonOffset.z)
-    launcher.button = CreateObject(buttonHash, buttonWorld.x, buttonWorld.y, buttonWorld.z, false, true, false)
+    launcher.button = CreateObject(buttonHash, buttonWorld.x, buttonWorld.y, buttonWorld.z, true, true, false)
+    ensureNetworkedEntity(launcher.button)
     SetEntityHeading(launcher.button, Config.LaunchSite.heading + 35.0)
     FreezeEntityPosition(launcher.button, true)
 
