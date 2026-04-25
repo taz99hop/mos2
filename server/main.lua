@@ -3,6 +3,13 @@ local QBCore = exports['qb-core']:GetCoreObject()
 local missiles = {}
 local missileCounter = 0
 
+local function resolveId(idOrData)
+    if type(idOrData) == 'table' then
+        return idOrData.id or idOrData.args or idOrData.missileId
+    end
+    return idOrData
+end
+
 local function dbg(...)
     if not Config.Debug then return end
     print('[mos2-server]', ...)
@@ -106,7 +113,8 @@ RegisterNetEvent('mos2:server:startCraft', function()
     broadcastState(id)
 end)
 
-RegisterNetEvent('mos2:server:cancelCraft', function(id)
+RegisterNetEvent('mos2:server:cancelCraft', function(idOrData)
+    local id = resolveId(idOrData)
     local missile = missiles[id]
     if not missile then return end
 
@@ -118,7 +126,8 @@ RegisterNetEvent('mos2:server:cancelCraft', function(id)
     TriggerClientEvent('mos2:client:deleteMissile', -1, id)
 end)
 
-RegisterNetEvent('mos2:server:setMissileStage', function(id, stage)
+RegisterNetEvent('mos2:server:setMissileStage', function(idOrData, stage)
+    local id = resolveId(idOrData)
     local missile = missiles[id]
     if not missile or missile.launched then return end
 
@@ -130,7 +139,8 @@ RegisterNetEvent('mos2:server:setMissileStage', function(id, stage)
     end
 end)
 
-RegisterNetEvent('mos2:server:setProgramming', function(id, rangeKm, target)
+RegisterNetEvent('mos2:server:setProgramming', function(idOrData, rangeKm, target)
+    local id = resolveId(idOrData)
     local src = source
     local missile = missiles[id]
     if not missile then return end
@@ -157,7 +167,8 @@ RegisterNetEvent('mos2:server:setProgramming', function(id, rangeKm, target)
     TriggerClientEvent('mos2:client:notify', src, ('تمت البرمجة بنجاح: %s كم - %s'):format(rangeKm, missile.programmedTarget.label), 'success')
 end)
 
-RegisterNetEvent('mos2:server:spawnTransport', function(id)
+RegisterNetEvent('mos2:server:spawnTransport', function(idOrData)
+    local id = resolveId(idOrData)
     local src = source
     local ped = GetPlayerPed(src)
     local missile = missiles[id]
@@ -185,7 +196,8 @@ RegisterNetEvent('mos2:server:spawnTransport', function(id)
     TriggerClientEvent('mos2:client:spawnTransport', src, netId)
 end)
 
-RegisterNetEvent('mos2:server:attachMissile', function(id, vehNetId)
+RegisterNetEvent('mos2:server:attachMissile', function(idOrData, vehNetId)
+    local id = resolveId(idOrData)
     local missile = missiles[id]
     if not missile then return end
 
@@ -194,7 +206,8 @@ RegisterNetEvent('mos2:server:attachMissile', function(id, vehNetId)
     TriggerClientEvent('mos2:client:syncAttach', -1, id, vehNetId)
 end)
 
-RegisterNetEvent('mos2:server:detachMissile', function(id)
+RegisterNetEvent('mos2:server:detachMissile', function(idOrData)
+    local id = resolveId(idOrData)
     local missile = missiles[id]
     if not missile then return end
 
@@ -203,7 +216,8 @@ RegisterNetEvent('mos2:server:detachMissile', function(id)
     TriggerClientEvent('mos2:client:syncDetach', -1, id)
 end)
 
-RegisterNetEvent('mos2:server:moveToLaunchPad', function(id)
+RegisterNetEvent('mos2:server:moveToLaunchPad', function(idOrData)
+    local id = resolveId(idOrData)
     local src = source
     local missile = missiles[id]
     if not missile then return end
@@ -309,7 +323,8 @@ local function runLaunchMotion(id)
     missiles[id] = nil
 end
 
-RegisterNetEvent('mos2:server:requestLaunch', function(id)
+RegisterNetEvent('mos2:server:requestLaunch', function(idOrData)
+    local id = resolveId(idOrData)
     local src = source
     local missile = missiles[id]
     if not missile then return end

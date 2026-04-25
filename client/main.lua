@@ -36,61 +36,61 @@ local function makeMissileTarget(id)
             {
                 icon = 'fas fa-hands',
                 label = 'حمل الصاروخ',
+                type = 'client',
+                event = 'mos2:client:carryMissile',
+                args = id,
                 canInteract = function()
                     return not carryingMissile and not missileData.attachedTruck and not missileData.launched
-                end,
-                action = function()
-                    TriggerEvent('mos2:client:carryMissile', id)
                 end
             },
             {
                 icon = 'fas fa-truck-loading',
                 label = 'تحميله على مركبة',
+                type = 'client',
+                event = 'mos2:client:loadToVehicle',
+                args = id,
                 canInteract = function()
                     return not missileData.attachedTruck and not missileData.launched
-                end,
-                action = function()
-                    TriggerEvent('mos2:client:loadToVehicle', id)
                 end
             },
             {
                 icon = 'fas fa-unlink',
                 label = 'فك التثبيت',
+                type = 'server',
+                event = 'mos2:server:detachMissile',
+                args = id,
                 canInteract = function()
                     return missileData.attachedTruck ~= nil and not missileData.launched
-                end,
-                action = function()
-                    TriggerServerEvent('mos2:server:detachMissile', id)
                 end
             },
             {
                 icon = 'fas fa-crosshairs',
                 label = 'برمجة الهدف',
+                type = 'client',
+                event = 'mos2:client:openProgramming',
+                args = id,
                 canInteract = function()
                     return missileData.complete and not missileData.launched
-                end,
-                action = function()
-                    TriggerEvent('mos2:client:openProgramming', id)
                 end
             },
             {
                 icon = 'fas fa-dolly',
                 label = 'نقل للمنصة',
+                type = 'server',
+                event = 'mos2:server:moveToLaunchPad',
+                args = id,
                 canInteract = function()
                     return missileData.complete and not missileData.launched
-                end,
-                action = function()
-                    TriggerServerEvent('mos2:server:moveToLaunchPad', id)
                 end
             },
             {
                 icon = 'fas fa-rocket',
                 label = 'إطلاق',
+                type = 'server',
+                event = 'mos2:server:requestLaunch',
+                args = id,
                 canInteract = function()
                     return missileData.complete and missileData.programmedTarget ~= nil and not missileData.launched
-                end,
-                action = function()
-                    TriggerServerEvent('mos2:server:requestLaunch', id)
                 end
             }
         },
@@ -154,16 +154,14 @@ CreateThread(function()
             {
                 icon = 'fas fa-rocket',
                 label = 'ابدأ تصنيع صاروخ',
-                action = function()
-                    TriggerServerEvent('mos2:server:startCraft')
-                end
+                type = 'server',
+                event = 'mos2:server:startCraft'
             },
             {
                 icon = 'fas fa-truck',
                 label = 'طلب شاحنة نقل',
-                action = function()
-                    TriggerServerEvent('mos2:server:requestTruckForOwner')
-                end
+                type = 'server',
+                event = 'mos2:server:requestTruckForOwner'
             }
         },
         distance = 2.5
@@ -231,7 +229,15 @@ RegisterNetEvent('mos2:client:deleteMissile', function(id)
     missiles[id] = nil
 end)
 
-RegisterNetEvent('mos2:client:carryMissile', function(id)
+local function resolveId(idOrData)
+    if type(idOrData) == 'table' then
+        return idOrData.id or idOrData.args or idOrData.missileId
+    end
+    return idOrData
+end
+
+RegisterNetEvent('mos2:client:carryMissile', function(idOrData)
+    local id = resolveId(idOrData)
     local missileData = missiles[id]
     if not missileData or not missileData.entity or not DoesEntityExist(missileData.entity) then return end
 
@@ -241,7 +247,8 @@ RegisterNetEvent('mos2:client:carryMissile', function(id)
     AttachEntityToEntity(missileData.entity, PlayerPedId(), GetPedBoneIndex(PlayerPedId(), 57005), 0.25, 0.02, -0.15, 180.0, 90.0, 90.0, false, false, false, false, 2, true)
 end)
 
-RegisterNetEvent('mos2:client:loadToVehicle', function(id)
+RegisterNetEvent('mos2:client:loadToVehicle', function(idOrData)
+    local id = resolveId(idOrData)
     local missileData = missiles[id]
     if not missileData or not missileData.entity or not DoesEntityExist(missileData.entity) then return end
 
@@ -284,7 +291,8 @@ RegisterNetEvent('mos2:client:syncDetach', function(id)
     end
 end)
 
-RegisterNetEvent('mos2:client:openProgramming', function(id)
+RegisterNetEvent('mos2:client:openProgramming', function(idOrData)
+    local id = resolveId(idOrData)
     local missileData = missiles[id]
     if not missileData then return end
 
