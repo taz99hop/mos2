@@ -1,0 +1,12 @@
+{
+  "name": "fivem-qbcore-generator",
+  "version": "1.0.0",
+  "description": "Simple AI-powered FiveM (QBCore) script generator",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "express": "^4.19.2"
+  }
+}
