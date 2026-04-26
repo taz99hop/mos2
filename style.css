@@ -1,0 +1,144 @@
+:root {
+  color-scheme: dark;
+  --bg: #0b1020;
+  --card: #141a2f;
+  --text: #e9ecf8;
+  --muted: #9aa3bd;
+  --primary: #5d7cff;
+  --primary-hover: #7690ff;
+  --border: #263153;
+  --success: #43c57a;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+  background: radial-gradient(circle at 20% 10%, #1a2350, var(--bg));
+  color: var(--text);
+  display: grid;
+  place-items: center;
+  padding: 24px;
+}
+
+.container {
+  width: min(920px, 100%);
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.03), transparent), var(--card);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 24px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.35);
+}
+
+h1 {
+  margin: 0;
+  font-size: clamp(1.3rem, 3vw, 2rem);
+}
+
+.subtitle {
+  margin: 10px 0 20px;
+  color: var(--muted);
+}
+
+label {
+  display: block;
+  margin-bottom: 8px;
+  font-weight: 600;
+}
+
+textarea {
+  width: 100%;
+  resize: vertical;
+  min-height: 130px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: #0b1228;
+  color: var(--text);
+  padding: 14px;
+  font-size: 1rem;
+  line-height: 1.5;
+}
+
+textarea:focus {
+  outline: 2px solid rgba(93, 124, 255, 0.5);
+  border-color: var(--primary);
+}
+
+.actions {
+  display: flex;
+  gap: 12px;
+  margin-top: 14px;
+}
+
+button {
+  border: none;
+  border-radius: 10px;
+  padding: 10px 16px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: 0.2s ease;
+}
+
+#generateBtn {
+  background: var(--primary);
+  color: #fff;
+}
+
+#generateBtn:hover {
+  background: var(--primary-hover);
+}
+
+#copyBtn {
+  background: #222c4f;
+  color: #d9e0ff;
+}
+
+#copyBtn:hover:not(:disabled) {
+  background: #2d3a69;
+}
+
+button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.loading {
+  margin-top: 14px;
+  color: var(--success);
+  font-weight: 600;
+}
+
+.hidden {
+  display: none;
+}
+
+.output-wrapper {
+  margin-top: 22px;
+}
+
+.output-wrapper h2 {
+  margin-bottom: 10px;
+}
+
+pre {
+  margin: 0;
+  background: #080d1e;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 16px;
+  max-height: 420px;
+  overflow: auto;
+  direction: ltr;
+  text-align: left;
+}
+
+code {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono',
+    'Courier New', monospace;
+  font-size: 0.92rem;
+  white-space: pre;
+}

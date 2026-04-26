@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>FiveM QBCore Script Generator</title>
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <main class="container">
+      <h1>مولد سكربتات FiveM (QBCore)</h1>
+      <p class="subtitle">اكتب طلبك وسيتم توليد كود جاهز لك مباشرة.</p>
+
+      <label for="prompt">اكتب الطلب</label>
+      <textarea
+        id="prompt"
+        placeholder="مثال: أريد سكربت صواريخ فايف إم"
+        rows="8"
+      ></textarea>
+
+      <div class="actions">
+        <button id="generateBtn">Generate</button>
+        <button id="copyBtn" disabled>Copy</button>
+      </div>
+
+      <div id="loading" class="loading hidden">جاري التوليد...</div>
+
+      <section class="output-wrapper">
+        <h2>الكود الناتج</h2>
+        <pre id="result"><code>// Generated code will appear here...</code></pre>
+      </section>
+    </main>
+
+    <script src="script.js"></script>
+  </body>
+</html>
