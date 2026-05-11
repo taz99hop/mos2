@@ -1,4 +1,5 @@
 local spawnedPlanes = {}
+local convoyActive = false
 
 local function loadModel(model)
     if not IsModelInCdimage(model) then return false end
@@ -27,6 +28,21 @@ local function assignTarget(index)
     local finalAltitude = target.z
     local cruiseTarget = vector3(target.x, target.y, Config.CruiseAltitude)
     return cruiseTarget, finalAltitude
+end
+
+local function createPlaneBlip(plane, index)
+    local blip = AddBlipForEntity(plane)
+    SetBlipSprite(blip, 307)
+    SetBlipColour(blip, 3)
+    SetBlipScale(blip, 0.75)
+    SetBlipAsShortRange(blip, false)
+    ShowHeadingIndicatorOnBlip(blip, true)
+
+    BeginTextCommandSetBlipName('STRING')
+    AddTextComponentString(('Plane %02d'):format(index))
+    EndTextCommandSetBlipName(blip)
+
+    return blip
 end
 
 local function createPlaneWithPilot(index)
@@ -67,15 +83,35 @@ local function createPlaneWithPilot(index)
         80.0
     )
 
+    local blip = createPlaneBlip(plane, index)
+
     spawnedPlanes[#spawnedPlanes + 1] = {
         plane = plane,
         pilot = pilot,
+        blip = blip,
         target = vector3(cruiseTarget.x, cruiseTarget.y, finalAltitude),
         descending = false
     }
 end
 
+local function clearConvoy()
+    for _, data in pairs(spawnedPlanes) do
+        if data.blip and DoesBlipExist(data.blip) then
+            RemoveBlip(data.blip)
+        end
+        if DoesEntityExist(data.pilot) then DeleteEntity(data.pilot) end
+        if DoesEntityExist(data.plane) then DeleteEntity(data.plane) end
+    end
+    spawnedPlanes = {}
+    convoyActive = false
+end
+
 local function startPlanesConvoy()
+    if convoyActive then
+        TriggerEvent('chat:addMessage', { args = { '^3[Planes]', 'Convoy already spawned.' } })
+        return
+    end
+
     if not loadModel(Config.PlaneModel) then
         print('[qb-planes-convoy] Failed loading plane model')
         return
@@ -86,6 +122,8 @@ local function startPlanesConvoy()
         return
     end
 
+    convoyActive = true
+
     for i = 1, Config.PlaneCount do
         createPlaneWithPilot(i)
         Wait(250)
@@ -93,12 +131,18 @@ local function startPlanesConvoy()
 
     SetModelAsNoLongerNeeded(Config.PlaneModel)
     SetModelAsNoLongerNeeded(Config.PilotModel)
+
+    TriggerEvent('chat:addMessage', { args = { '^2[Planes]', ('Spawned %d planes.'):format(Config.PlaneCount) } })
 end
 
-CreateThread(function()
-    Wait(Config.StartDelay)
+RegisterCommand('spawnplanes', function()
     startPlanesConvoy()
-end)
+end, false)
+
+RegisterCommand('clearplanes', function()
+    clearConvoy()
+    TriggerEvent('chat:addMessage', { args = { '^1[Planes]', 'All spawned planes cleared.' } })
+end, false)
 
 CreateThread(function()
     while true do
@@ -128,17 +172,20 @@ CreateThread(function()
                     )
                 end
             else
-                spawnedPlanes[i] = nil
+                if data and data.blip and DoesBlipExist(data.blip) then
+                    RemoveBlip(data.blip)
+                end
+                table.remove(spawnedPlanes, i)
             end
+        end
+
+        if convoyActive and #spawnedPlanes == 0 then
+            convoyActive = false
         end
     end
 end)
 
 AddEventHandler('onResourceStop', function(resourceName)
     if resourceName ~= GetCurrentResourceName() then return end
-
-    for _, data in pairs(spawnedPlanes) do
-        if DoesEntityExist(data.pilot) then DeleteEntity(data.pilot) end
-        if DoesEntityExist(data.plane) then DeleteEntity(data.plane) end
-    end
+    clearConvoy()
 end)
