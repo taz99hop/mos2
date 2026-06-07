@@ -1,0 +1,15 @@
+<UserControl x:Class="DerechHadasha.Views.LogoMark"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             Width="88" Height="88" FlowDirection="LeftToRight">
+    <Viewbox Stretch="Uniform">
+        <Canvas Width="160" Height="160" Background="Transparent">
+            <Polyline Points="20,40 45,112" Stroke="#FF5B00" StrokeThickness="18" StrokeStartLineCap="Round" StrokeEndLineCap="Round" />
+            <Polyline Points="45,112 77,25" Stroke="#FBBF24" StrokeThickness="18" StrokeStartLineCap="Round" StrokeEndLineCap="Round" />
+            <Polyline Points="77,25 112,112" Stroke="#00B050" StrokeThickness="18" StrokeStartLineCap="Round" StrokeEndLineCap="Round" />
+            <Polyline Points="112,112 140,40" Stroke="#0EA5E9" StrokeThickness="18" StrokeStartLineCap="Round" StrokeEndLineCap="Round" />
+            <TextBlock Text="דרך חדשה" Canvas.Left="28" Canvas.Top="120" Width="110" TextAlignment="Center"
+                       FontSize="18" FontWeight="Bold" Foreground="#16213E" FlowDirection="RightToLeft" />
+        </Canvas>
+    </Viewbox>
+</UserControl>
