@@ -19,7 +19,7 @@
 ## דרישות פיתוח
 
 - Windows 10/11
-- .NET 8 SDK
+- .NET 8 SDK או גרסה חדשה יותר
 - Inno Setup 6 ליצירת מתקין
 
 ## הרצה מקומית
@@ -30,6 +30,8 @@ cd src/DerechHadasha
  dotnet build
  dotnet run
 ```
+
+> הערה: הפרויקט מכוון ל-`net8.0-windows10.0.17763.0`, כדי למנוע שגיאת `NETSDK1135` בעת פרסום עם SDK חדש יותר.
 
 ## בניית התקנה
 
