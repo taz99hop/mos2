@@ -30,8 +30,8 @@ public partial class MainViewModel : ObservableObject
     [ObservableProperty] private DateTime reportToDate = DateTime.Today;
     [ObservableProperty] private string statusMessage = "מוכן לעבודה";
 
-    public IReadOnlyList<string> ShiftTypes { get; } = new[] { "בוקר", "לילה" };
-    public IReadOnlyList<string> SearchShiftTypes { get; } = new[] { "הכול", "בוקר", "לילה" };
+    public IReadOnlyList<string> ShiftTypes { get; } = new[] { "בוקר", "לילה", "בוקר ולילה" };
+    public IReadOnlyList<string> SearchShiftTypes { get; } = new[] { "הכול", "בוקר", "לילה", "בוקר ולילה" };
 
     public string TodayIncomeText => Summary.TodayIncome.ToString("C", CultureInfo.GetCultureInfo("he-IL"));
     public string WeekIncomeText => Summary.WeekIncome.ToString("C", CultureInfo.GetCultureInfo("he-IL"));
@@ -64,6 +64,7 @@ public partial class MainViewModel : ObservableObject
         CurrentEntry = new WorkEntry
         {
             Id = SelectedEntry.Id,
+            WorkerName = SelectedEntry.WorkerName,
             Date = SelectedEntry.Date,
             ShiftType = SelectedEntry.ShiftType,
             IncomeAmount = SelectedEntry.IncomeAmount,
@@ -88,6 +89,32 @@ public partial class MainViewModel : ObservableObject
         await RefreshAsync();
     }
 
+
+    [RelayCommand]
+    public void SetToday()
+    {
+        CurrentEntry.Date = DateTime.Today;
+        OnPropertyChanged(nameof(CurrentEntry));
+        Show("התאריך עודכן להיום.");
+    }
+
+    [RelayCommand]
+    public void SetMorningShift() => SetShift(ShiftType.Morning, "משמרת בוקר נבחרה.");
+
+    [RelayCommand]
+    public void SetNightShift() => SetShift(ShiftType.Night, "משמרת לילה נבחרה.");
+
+    [RelayCommand]
+    public void SetBothShifts() => SetShift(ShiftType.Both, "משמרת בוקר ולילה נבחרה.");
+
+    [RelayCommand]
+    public void ClearForm()
+    {
+        CurrentEntry = new WorkEntry();
+        SelectedEntry = null;
+        Show("הטופס נוקה ומוכן לרשומה חדשה.");
+    }
+
     [RelayCommand]
     public void AttachImage()
     {
@@ -103,7 +130,7 @@ public partial class MainViewModel : ObservableObject
     [RelayCommand]
     public async Task SearchAsync()
     {
-        var shift = SelectedSearchShift switch { "בוקר" => ShiftType.Morning, "לילה" => ShiftType.Night, _ => (ShiftType?)null };
+        var shift = SelectedSearchShift switch { "בוקר" => ShiftType.Morning, "לילה" => ShiftType.Night, "בוקר ולילה" => ShiftType.Both, _ => (ShiftType?)null };
         Entries = new ObservableCollection<WorkEntry>(await _database.GetEntriesAsync(SearchFromDate, SearchToDate, SearchKeyword, shift));
         Show($"נמצאו {Entries.Count} רשומות.");
     }
@@ -204,6 +231,14 @@ public partial class MainViewModel : ObservableObject
         Entries = new ObservableCollection<WorkEntry>(await _database.GetEntriesAsync(limit: 250));
         RecentEntries = new ObservableCollection<WorkEntry>(await _database.GetEntriesAsync(limit: 8));
         await BuildChartsAsync();
+    }
+
+
+    private void SetShift(ShiftType shiftType, string message)
+    {
+        CurrentEntry.ShiftType = shiftType;
+        OnPropertyChanged(nameof(CurrentEntry));
+        Show(message);
     }
 
     private async Task BuildChartsAsync()

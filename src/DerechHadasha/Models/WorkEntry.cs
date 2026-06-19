@@ -3,12 +3,14 @@ namespace DerechHadasha.Models;
 public enum ShiftType
 {
     Morning,
-    Night
+    Night,
+    Both
 }
 
 public sealed class WorkEntry
 {
     public int Id { get; set; }
+    public string WorkerName { get; set; } = string.Empty;
     public DateTime Date { get; set; } = DateTime.Today;
     public ShiftType ShiftType { get; set; } = ShiftType.Morning;
     public decimal IncomeAmount { get; set; }
@@ -18,5 +20,13 @@ public sealed class WorkEntry
     public string? ImagePath { get; set; }
     public DateTime CreatedAt { get; set; } = DateTime.Now;
     public DateTime UpdatedAt { get; set; } = DateTime.Now;
-    public string ShiftTypeHebrew => ShiftType == ShiftType.Morning ? "בוקר" : "לילה";
+    public int ShiftUnits => ShiftType == ShiftType.Both ? 2 : 1;
+
+    public string ShiftTypeHebrew => ShiftType switch
+    {
+        ShiftType.Morning => "בוקר",
+        ShiftType.Night => "לילה",
+        ShiftType.Both => "בוקר ולילה",
+        _ => "בוקר"
+    };
 }

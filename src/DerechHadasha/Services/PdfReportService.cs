@@ -72,18 +72,19 @@ public sealed class PdfReportService
     {
         var total = entries.Sum(x => x.IncomeAmount);
         var hours = entries.Sum(x => x.HoursWorked);
-        var avgShift = entries.Count == 0 ? 0 : total / entries.Count;
+        var shiftCount = entries.Sum(x => x.ShiftUnits);
+        var avgShift = shiftCount == 0 ? 0 : total / shiftCount;
         gfx.DrawRoundedRectangle(new XSolidBrush(XColor.FromArgb(245, 247, 251)), 40, y, page.Width - 80, 72, 8, 8);
         gfx.DrawString($"סה״כ הכנסות: {total.ToString("C", CultureInfo.GetCultureInfo("he-IL"))}", fonts.Bold, XBrushes.Black, new XRect(60, y + 12, page.Width - 120, 20), XStringFormats.TopRight);
-        gfx.DrawString($"מספר משמרות: {entries.Count}   |   שעות עבודה: {hours:N1}   |   ממוצע למשמרת: {avgShift.ToString("C", CultureInfo.GetCultureInfo("he-IL"))}", fonts.Normal, XBrushes.DimGray, new XRect(60, y + 40, page.Width - 120, 20), XStringFormats.TopRight);
+        gfx.DrawString($"מספר משמרות: {shiftCount}   |   שעות עבודה: {hours:N1}   |   ממוצע למשמרת: {avgShift.ToString("C", CultureInfo.GetCultureInfo("he-IL"))}", fonts.Normal, XBrushes.DimGray, new XRect(60, y + 40, page.Width - 120, 20), XStringFormats.TopRight);
         y += 92;
     }
 
     private static void DrawTableHeader(XGraphics gfx, PdfPage page, Fonts fonts, ref double y)
     {
         gfx.DrawRectangle(new XSolidBrush(XColor.FromArgb(14, 165, 233)), 40, y, page.Width - 80, 28);
-        var headers = new[] { "הערות", "מה עשינו היום", "שעות", "הכנסה", "משמרת", "תאריך" };
-        var widths = new[] { 110d, 170d, 55d, 85d, 65d, 85d };
+        var headers = new[] { "הערות", "מה עשינו היום", "שעות", "הכנסה", "משמרת", "עובד", "תאריך" };
+        var widths = new[] { 60d, 115d, 40d, 65d, 60d, 65d, 70d };
         var x = 40d;
         for (var i = 0; i < headers.Length; i++)
         {
@@ -95,11 +96,12 @@ public sealed class PdfReportService
 
     private static void DrawRow(XGraphics gfx, PdfPage page, Fonts fonts, WorkEntry entry, ref double y)
     {
-        var widths = new[] { 110d, 170d, 55d, 85d, 65d, 85d };
+        var widths = new[] { 60d, 115d, 40d, 65d, 60d, 65d, 70d };
         var values = new[]
         {
-            Truncate(entry.Notes, 34), Truncate(entry.Description, 52), entry.HoursWorked.ToString("N1"),
-            entry.IncomeAmount.ToString("C0", CultureInfo.GetCultureInfo("he-IL")), entry.ShiftTypeHebrew, entry.Date.ToString("dd/MM/yyyy")
+            Truncate(entry.Notes, 20), Truncate(entry.Description, 36), entry.HoursWorked.ToString("N1"),
+            entry.IncomeAmount.ToString("C0", CultureInfo.GetCultureInfo("he-IL")), entry.ShiftTypeHebrew,
+            Truncate(entry.WorkerName, 18), entry.Date.ToString("dd/MM/yyyy")
         };
         gfx.DrawRectangle(XPens.LightGray, 40, y, page.Width - 80, 26);
         var x = 40d;

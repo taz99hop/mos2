@@ -79,7 +79,8 @@
                                     <TextBlock Text="רשומות עבודה אחרונות" FontSize="20" FontWeight="Bold" Margin="0,0,0,12" />
                                     <DataGrid ItemsSource="{Binding RecentEntries}" AutoGenerateColumns="False" IsReadOnly="True" CanUserAddRows="False" MinHeight="260">
                                         <DataGrid.Columns>
-                                            <DataGridTextColumn Header="תאריך" Binding="{Binding Date, StringFormat=dd/MM/yyyy}" Width="120"/>
+                                            <DataGridTextColumn Header="תאריך" Binding="{Binding Date, StringFormat=dd/MM/yyyy}" Width="110"/>
+                                            <DataGridTextColumn Header="עובד" Binding="{Binding WorkerName}" Width="120"/>
                                             <DataGridTextColumn Header="משמרת" Binding="{Binding ShiftTypeHebrew}" Width="90"/>
                                             <DataGridTextColumn Header="הכנסה" Binding="{Binding IncomeAmount, StringFormat=C}" Width="110"/>
                                             <DataGridTextColumn Header="שעות" Binding="{Binding HoursWorked}" Width="80"/>
@@ -109,9 +110,19 @@
                         <ScrollViewer>
                             <StackPanel>
                                 <TextBlock Text="טופס עבודה" FontSize="22" FontWeight="Bold" Margin="0,0,0,16" />
-                                <TextBlock Text="תאריך"/><DatePicker SelectedDate="{Binding CurrentEntry.Date, Mode=TwoWay}" Margin="0,4,0,10" />
+                                <TextBlock Text="שם העובד"/><TextBox Text="{Binding CurrentEntry.WorkerName, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                                <TextBlock Text="תאריך"/>
+                                <DockPanel Margin="0,4,0,10">
+                                    <Button DockPanel.Dock="Left" Content="היום" Command="{Binding SetTodayCommand}" Padding="10,6" />
+                                    <DatePicker SelectedDate="{Binding CurrentEntry.Date, Mode=TwoWay}" />
+                                </DockPanel>
                                 <TextBlock Text="סוג משמרת"/>
-                                <ComboBox ItemsSource="{Binding ShiftTypes}" SelectedItem="{Binding CurrentEntry.ShiftType, Converter={StaticResource ShiftTypeConverter}, Mode=TwoWay}" Margin="0,4,0,10" Padding="8" />
+                                <ComboBox ItemsSource="{Binding ShiftTypes}" SelectedItem="{Binding CurrentEntry.ShiftType, Converter={StaticResource ShiftTypeConverter}, Mode=TwoWay}" Margin="0,4,0,6" Padding="8" />
+                                <WrapPanel Margin="0,0,0,10">
+                                    <Button Content="בוקר" Command="{Binding SetMorningShiftCommand}" Padding="10,6" />
+                                    <Button Content="לילה" Command="{Binding SetNightShiftCommand}" Padding="10,6" />
+                                    <Button Content="בוקר ולילה" Command="{Binding SetBothShiftsCommand}" Padding="10,6" />
+                                </WrapPanel>
                                 <TextBlock Text="סכום הכנסה"/><TextBox Text="{Binding CurrentEntry.IncomeAmount, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
                                 <TextBlock Text="שעות עבודה"/><TextBox Text="{Binding CurrentEntry.HoursWorked, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
                                 <TextBlock Text="מה עשינו היום"/><TextBox Text="{Binding CurrentEntry.Description, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" AcceptsReturn="True" Height="86" TextWrapping="Wrap" />
@@ -119,6 +130,7 @@
                                 <TextBlock Text="תמונה מצורפת"/><TextBox Text="{Binding CurrentEntry.ImagePath}" IsReadOnly="True" />
                                 <WrapPanel>
                                     <Button Content="צרף תמונה" Command="{Binding AttachImageCommand}" />
+                                    <Button Content="נקה טופס" Command="{Binding ClearFormCommand}" />
                                     <Button Content="שמור" Command="{Binding SaveEntryCommand}" Background="{DynamicResource AccentBrush}" />
                                     <Button Content="ערוך נבחר" Command="{Binding EditSelectedCommand}" />
                                     <Button Content="מחק נבחר" Command="{Binding DeleteSelectedCommand}" Background="{DynamicResource DangerBrush}" />
@@ -129,7 +141,8 @@
                     <Border Style="{StaticResource Card}" Grid.Column="1">
                         <DataGrid ItemsSource="{Binding Entries}" SelectedItem="{Binding SelectedEntry, Mode=TwoWay}" AutoGenerateColumns="False" IsReadOnly="True" CanUserAddRows="False">
                             <DataGrid.Columns>
-                                <DataGridTextColumn Header="תאריך" Binding="{Binding Date, StringFormat=dd/MM/yyyy}" Width="120"/>
+                                <DataGridTextColumn Header="תאריך" Binding="{Binding Date, StringFormat=dd/MM/yyyy}" Width="110"/>
+                                <DataGridTextColumn Header="עובד" Binding="{Binding WorkerName}" Width="120"/>
                                 <DataGridTextColumn Header="משמרת" Binding="{Binding ShiftTypeHebrew}" Width="90"/>
                                 <DataGridTextColumn Header="הכנסה" Binding="{Binding IncomeAmount, StringFormat=C}" Width="110"/>
                                 <DataGridTextColumn Header="שעות" Binding="{Binding HoursWorked}" Width="80"/>
@@ -161,14 +174,15 @@
                             <TextBlock Text="חיפוש" VerticalAlignment="Center" Margin="8"/><TextBox Text="{Binding SearchKeyword}" Width="180" />
                             <TextBlock Text="מתאריך" VerticalAlignment="Center" Margin="8"/><DatePicker SelectedDate="{Binding SearchFromDate}" Margin="4" />
                             <TextBlock Text="עד" VerticalAlignment="Center" Margin="8"/><DatePicker SelectedDate="{Binding SearchToDate}" Margin="4" />
-                            <TextBlock Text="משמרת" VerticalAlignment="Center" Margin="8"/><ComboBox ItemsSource="{Binding SearchShiftTypes}" SelectedItem="{Binding SelectedSearchShift}" Width="90" Padding="8" />
+                            <TextBlock Text="משמרת" VerticalAlignment="Center" Margin="8"/><ComboBox ItemsSource="{Binding SearchShiftTypes}" SelectedItem="{Binding SelectedSearchShift}" Width="125" Padding="8" />
                             <Button Content="חפש" Command="{Binding SearchCommand}" />
                         </WrapPanel>
                     </Border>
                     <Border Style="{StaticResource Card}">
                         <DataGrid ItemsSource="{Binding Entries}" AutoGenerateColumns="False" IsReadOnly="True" CanUserAddRows="False">
                             <DataGrid.Columns>
-                                <DataGridTextColumn Header="תאריך" Binding="{Binding Date, StringFormat=dd/MM/yyyy}" Width="120"/>
+                                <DataGridTextColumn Header="תאריך" Binding="{Binding Date, StringFormat=dd/MM/yyyy}" Width="110"/>
+                                <DataGridTextColumn Header="עובד" Binding="{Binding WorkerName}" Width="120"/>
                                 <DataGridTextColumn Header="משמרת" Binding="{Binding ShiftTypeHebrew}" Width="90"/>
                                 <DataGridTextColumn Header="הכנסה" Binding="{Binding IncomeAmount, StringFormat=C}" Width="110"/>
                                 <DataGridTextColumn Header="שעות" Binding="{Binding HoursWorked}" Width="80"/>
